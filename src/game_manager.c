@@ -6,11 +6,11 @@
 int game_manager_process_login(int game_id, const char* username,
     char* initial_info, size_t initial_info_size,
     int* turn) {
-// Asignamos turno = 1 para el primer cliente (la lógica real debería basarse en el orden de conexión)
-*turn = 1;
-// Información inicial (puedes extenderla según sea necesario)
-snprintf(initial_info, initial_info_size, "1,2,3");
-return 0;
+        // Asignamos turno = 1 para el primer cliente (la lógica real debería basarse en el orden de conexión)
+        *turn = 1;
+        // Información inicial (puedes extenderla según sea necesario)
+        snprintf(initial_info, initial_info_size, "1,2,3");
+        return 0;
 }
 
 int game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int attackValue,
