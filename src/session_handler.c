@@ -13,6 +13,7 @@ void *session_handler(void *arg) {
     int sock2 = session->client_sock2;
     int client_id1 = session->client_id1;
     int client_id2 = session->client_id2;
+    int game_id = session->game_id;
     char username1[50], username2[50];
     strncpy(username1, session->username1, sizeof(username1));
     username1[sizeof(username1)-1] = '\0';
@@ -22,7 +23,7 @@ void *session_handler(void *arg) {
     char buff[MAX];
     int n;
     
-    printf("Iniciando sesión de chat entre %s y %s...\n", username1, username2);
+    printf("Iniciando sesión de chat entre %s y %s en partida %d...\n", username1, username2, game_id);
     
     while (1) {
         fd_set readfds;
@@ -67,6 +68,6 @@ void *session_handler(void *arg) {
     
     close(sock1);
     close(sock2);
-    printf("Sesión de chat finalizada entre %s y %s.\n", username1, username2);
+    printf("Sesión de chat finalizada entre %s y %s en partida %d.\n", username1, username2, game_id);
     return NULL;
 }

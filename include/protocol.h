@@ -4,18 +4,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Se agregan los nuevos tipos de mensaje al enum.
+// Se agregan los nuevos tipos de mensaje.
 typedef enum {
     MSG_LOGIN,   // Mensaje de login, enviado por el cliente con su username.
     MSG_LOGGED,  // ACK de login, enviado por el servidor.
     MSG_ATTACK,
     MSG_RESULT,
-    MSG_CONNECT,
-    MSG_END,
     MSG_UPDATE,
-    MSG_START,
+    MSG_END,
     MSG_ERROR,
-    MSG_INVALID  // Para errores.
+    MSG_INVALID,  // Para errores.
+    MSG_START
 } MessageType;
 
 // Mapeo de strings para los mensajes.
@@ -24,12 +23,11 @@ static const char* MessageTypeStr[] = {
     "LOGGED",
     "ATTACK",
     "RESULT",
-    "CONNECT",
-    "GAME_END",
     "UPDATE",
-    "GAME_START",
+    "GAME_END",
     "ERROR",
     "INVALID"
+    "GAME_START", // Posiblemente se borrará. 
 };
 
 // Estructura para representar un mensaje del protocolo.

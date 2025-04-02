@@ -67,10 +67,19 @@ int main() {
     }
     username[strcspn(username, "\n")] = '\0';
     
+    // Solicitar el game_id.
+    int game_id;
+    printf("Ingrese el ID de partida: ");
+    if (scanf("%d", &game_id) != 1) {
+        printf("Error leyendo el ID de partida.\n");
+        exit(EXIT_FAILURE);
+    }
+    while(getchar() != '\n'); // Limpiar el buffer
+    
     // Construir y enviar el mensaje de login.
     ProtocolMessage loginMsg;
     loginMsg.type = MSG_LOGIN;
-    loginMsg.game_id = 0;
+    loginMsg.game_id = game_id;
     strncpy(loginMsg.data, username, sizeof(loginMsg.data) - 1);
     loginMsg.data[sizeof(loginMsg.data) - 1] = '\0';
     
