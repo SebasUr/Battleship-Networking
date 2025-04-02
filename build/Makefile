@@ -8,7 +8,7 @@ SERVER = server
 CLIENT = client
 
 # Archivos fuente para el servidor
-SERVER_SRCS = $(SRC_DIR)/server_main.c $(SRC_DIR)/protocol.c $(SRC_DIR)/session_handler.c
+SERVER_SRCS = $(SRC_DIR)/server_main.c $(SRC_DIR)/protocol.c $(SRC_DIR)/session_handler.c $(SRC_DIR)/game_manager.c
 
 # Archivo fuente para el cliente (asegúrate de tenerlo en src)
 CLIENT_SRCS = $(SRC_DIR)/client.c $(SRC_DIR)/protocol.c

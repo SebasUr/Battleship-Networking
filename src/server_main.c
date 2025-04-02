@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include "session_handler.h"
 #include "protocol.h"
+#include "game_manager.h"
 
 #define PORT 8080
 #define MAX 1024
@@ -26,9 +27,9 @@ int main() {
     
     // Crear el socket de escucha.
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        perror("Error al crear socket");
-        exit(EXIT_FAILURE);
+    if (sockfd < 0) { 
+        perror("Error al crear socket"); 
+        exit(EXIT_FAILURE); 
     }
     printf("Socket del servidor creado.\n");
     
@@ -37,15 +38,15 @@ int main() {
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(PORT);
     
-    if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-        perror("Error en bind");
-        exit(EXIT_FAILURE);
+    if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) { 
+        perror("Error en bind"); 
+        exit(EXIT_FAILURE); 
     }
     printf("Socket enlazado a puerto %d.\n", PORT);
     
-    if (listen(sockfd, 5) < 0) {
-        perror("Error en listen");
-        exit(EXIT_FAILURE);
+    if (listen(sockfd, 5) < 0) { 
+        perror("Error en listen"); 
+        exit(EXIT_FAILURE); 
     }
     printf("Servidor escuchando...\n");
     
@@ -87,19 +88,19 @@ int main() {
         
         // Esperar a que un cliente se conecte.
         client_sock = accept(sockfd, (struct sockaddr*)&cli_addr, &cli_len);
-        if (client_sock < 0) {
-            perror("Error en accept");
-            continue;
+        if (client_sock < 0) { 
+            perror("Error en accept"); 
+            continue; 
         }
         client_id = ++client_counter;
         
         // Recibir mensaje de login del cliente.
         memset(buff, 0, MAX);
         n = read(client_sock, buff, MAX);
-        if (n <= 0) {
-            perror("Error al leer login del cliente");
-            close(client_sock);
-            continue;
+        if (n <= 0) { 
+            perror("Error al leer login del cliente"); 
+            close(client_sock); 
+            continue; 
         }
         if (!parse_message(buff, &msg) || msg.type != MSG_LOGIN) {
             printf("Cliente %d: Login mal formado o tipo incorrecto.\n", client_id);
@@ -107,26 +108,42 @@ int main() {
             continue;
         }
         
-        // Para el login, se espera que msg.game_id contenga el ID de partida y msg.data el username.
+        // Para el login: msg.game_id es el MatchID y msg.data es el username.
         int game_id = msg.game_id;
         char username[50];
         strncpy(username, msg.data, sizeof(username)-1);
         username[sizeof(username)-1] = '\0';
         
-        // Enviar ACK de login.
+        // Procesar el login mediante game_manager.
         ProtocolMessage ackMsg;
         ackMsg.type = MSG_LOGGED;
         ackMsg.game_id = game_id;
-        strncpy(ackMsg.data, "Ok", sizeof(ackMsg.data)-1);
+        char initial_info[100];
+        int turn;
+        if (game_manager_process_login(game_id, username, initial_info, sizeof(initial_info), &turn) != 0) {
+            printf("Error en game_manager_process_login para Cliente %d.\n", client_id);
+            close(client_sock);
+            continue;
+        }
+        
+        // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
+        // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>"
+        char temp_data[150];
+        snprintf(temp_data, sizeof(temp_data), "Ok|%d|%s", turn, initial_info);
+        strncpy(ackMsg.data, temp_data, sizeof(ackMsg.data)-1);
         ackMsg.data[sizeof(ackMsg.data)-1] = '\0';
-        format_message(ackMsg, ack, MAX);
-        write(client_sock, ack, strlen(ack));
-        printf("Cliente %d autenticado como %s en partida %d.\n", client_id, username, game_id);
+        char formatted_ack[MAX];
+        format_message(ackMsg, formatted_ack, MAX);
         
         // Buscar en la lista de espera si hay un cliente con el mismo game_id.
         waiting_client_t *waiting = pop_waiting_client(&waiting_list, game_id);
         if (waiting == NULL) {
-            // No hay cliente esperando para este game_id; agregar el actual a la lista.
+            // Primer cliente en la sala para este game_id.
+            // El turno que devuelve game_manager ya debería ser 1.
+            write(client_sock, formatted_ack, strlen(formatted_ack));
+            printf("Cliente %d autenticado como %s en partida %d. (Turno: %d)\n", client_id, username, game_id, turn);
+            
+            // Agregar este cliente a la lista de espera.
             waiting_client_t *new_waiting = malloc(sizeof(waiting_client_t));
             if (!new_waiting) {
                 perror("Error al asignar memoria para cliente en espera");
@@ -142,8 +159,17 @@ int main() {
             add_waiting_client(&waiting_list, new_waiting);
             printf("Cliente %d en espera para partida %d.\n", client_id, game_id);
         } else {
-            // Se encontró un cliente esperando con el mismo game_id: crear la sesión.
-            // Los datos del cliente en espera.
+            // Se encontró un cliente esperando con el mismo game_id: este es el segundo.
+            // Para el segundo cliente, forzamos turno = 0.
+            turn = 0;
+            snprintf(temp_data, sizeof(temp_data), "Ok|%d|%s", turn, initial_info);
+            strncpy(ackMsg.data, temp_data, sizeof(ackMsg.data)-1);
+            ackMsg.data[sizeof(ackMsg.data)-1] = '\0';
+            format_message(ackMsg, formatted_ack, MAX);
+            write(client_sock, formatted_ack, strlen(formatted_ack));
+            printf("Cliente %d autenticado como %s en partida %d. (Turno: %d)\n", client_id, username, game_id, turn);
+            
+            // Emparejar: el cliente que estaba en espera (primero) y este segundo cliente.
             int client_sock1 = waiting->sock;
             int client_id1 = waiting->client_id;
             char username1[50];
@@ -151,14 +177,13 @@ int main() {
             username1[sizeof(username1)-1] = '\0';
             free(waiting);
             
-            // El cliente actual es el segundo de la sesión.
             int client_sock2 = client_sock;
             int client_id2 = client_id;
             char username2[50];
             strncpy(username2, username, sizeof(username2));
             username2[sizeof(username2)-1] = '\0';
             
-            // Crear la sesión y asignar sockets, IDs, usernames y game_id.
+            // Crear la sesión y asignar datos.
             session_pair_t *session = malloc(sizeof(session_pair_t));
             if (session == NULL) {
                 perror("Error al asignar memoria para la sesión");
@@ -170,13 +195,13 @@ int main() {
             session->client_sock2 = client_sock2;
             session->client_id1 = client_id1;
             session->client_id2 = client_id2;
-            session->game_id = game_id; // Ambos coinciden.
+            session->game_id = game_id;
             strncpy(session->username1, username1, sizeof(session->username1)-1);
             session->username1[sizeof(session->username1)-1] = '\0';
             strncpy(session->username2, username2, sizeof(session->username2)-1);
             session->username2[sizeof(session->username2)-1] = '\0';
             
-            // Crear un hilo para manejar la sesión entre estos dos clientes.
+            // Crear un hilo para manejar la sesión.
             pthread_t tid;
             if (pthread_create(&tid, NULL, session_handler, (void*)session) != 0) {
                 perror("Error al crear el hilo de sesión");
@@ -191,7 +216,6 @@ int main() {
         }
     }
     
-    // Cerrar el socket del servidor (nunca se llega aquí en este ejemplo)
     close(sockfd);
     return 0;
 }

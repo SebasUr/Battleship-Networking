@@ -1,46 +1,30 @@
 #include "game_manager.h"
 #include <stdio.h>
+#include <string.h>
 
-int boundx = 100;
-int boundy = 100;
+// Stub para el proceso de login.
+int game_manager_process_login(int game_id, const char* username,
+    char* initial_info, size_t initial_info_size,
+    int* turn) {
+// Asignamos turno = 1 para el primer cliente (la lógica real debería basarse en el orden de conexión)
+*turn = 1;
+// Información inicial (puedes extenderla según sea necesario)
+snprintf(initial_info, initial_info_size, "1,2,3");
+return 0;
+}
 
-void game_manager_attack(int game_id, int x, int y) {
-    char msg_error[300];
-    printf("game_manager_attack: game_id=%d, x=%d, y=%d\n", game_id, x, y);
-    if (x < 0 || y < 0 || x > boundx || y > boundy){
-        //Enviar mensaje ERROR|id|"Invalid move: out of bounds"
-        parse_and_handle_message(msg_error);
+int game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int attackValue,
+                                char* attackerResponse, size_t attackerResponseSize,
+                                char* enemyResponse, size_t enemyResponseSize) {
+    if (attackValue == 1) { 
+        snprintf(attackerResponse, attackerResponseSize, "%s|0", attacker);
+        snprintf(enemyResponse, enemyResponseSize, "%s|1", enemy);
+    } else if (attackValue == 3) {
+        snprintf(attackerResponse, attackerResponseSize, "%s|1", attacker);
+        snprintf(enemyResponse, enemyResponseSize, "%s|0", enemy);
+    } else {
+        snprintf(attackerResponse, attackerResponseSize, "Error|0");
+        snprintf(enemyResponse, enemyResponseSize, "Error|0");
     }
-    //Condiciòn para ataque duplicado
-
-    //Verificar si acertò o no
-
-    //Definir mensajes de result y update
-    //Verificar si CONTINUE o WIN
-    char msg_result[300];
-    char msg_update[300];
-    
-    parse_and_handle_message(msg_result);
-    parse_and_handle_update(msg_result);
-}
-
-void server_result(int game_id, const char* result, int x, int y) {
-    printf("server_result: game_id=%d, x=%d, y=%d, result=%s\n", game_id, x, y, result);
-}
-
-void server_connect(int game_id, const char* data) {
-    printf("server_connect: game_id=%d, data=%s\n", game_id, data);
-}
-
-void server_update(int game_id, const char* data) {
-    printf("server_update: game_id=%d, data=%s\n", game_id, data);
-}
-
-void server_start(int game_id) {
-    printf("server_start: game_id=%d\n", game_id);
-}
-
-void server_end(GameManager* game_manager, int game_id) {
-    // Aquí se podría modificar el estado del game_manager si es necesario.
-    printf("server_end: game_id=%d\n", game_id);
+    return 2;
 }

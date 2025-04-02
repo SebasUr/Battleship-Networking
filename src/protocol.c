@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 const char* message_type_to_string(MessageType type) {
-    if (type >= 0 && type < (sizeof(MessageTypeStr)/sizeof(MessageTypeStr[0])))
+    if (type >= 0 && type < (int)(sizeof(MessageTypeStr)/sizeof(MessageTypeStr[0])))
         return MessageTypeStr[type];
     return "INVALID";
 }
@@ -18,8 +18,7 @@ MessageType string_to_message_type(const char* str) {
     return MSG_INVALID;
 }
 
-// Se espera un formato "COMANDO|game_id|datos"
-// Por ejemplo, para login: "LOGIN|0|alice"
+// Parsea un mensaje en formato "COMANDO|game_id|datos"
 bool parse_message(const char* input, ProtocolMessage* msg) {
     if (!input || !msg) return false;
     char type_str[50];
@@ -36,6 +35,7 @@ bool parse_message(const char* input, ProtocolMessage* msg) {
     return true;
 }
 
+// Formatea un mensaje en "COMANDO|game_id|datos"
 void format_message(ProtocolMessage msg, char* output, size_t size) {
     if (!output) return;
     snprintf(output, size, "%s|%d|%s", message_type_to_string(msg.type), msg.game_id, msg.data);
