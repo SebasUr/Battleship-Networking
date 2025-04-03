@@ -1,11 +1,9 @@
-#include "game_manager.h"
+#include "game_manager_merge.h"
 #include <stdio.h>
 #include <string.h>
 
 // Stub para el proceso de login.
-int game_manager_process_login(int game_id, const char* username,
-    char* initial_info, size_t initial_info_size,
-    int* turn) {
+int game_manager_process_login(int game_id, const char* username, char* initial_info, size_t initial_info_size,int* turn) {
         // Asignamos turno = 1 para el primer cliente (la lógica real debería basarse en el orden de conexión)
         *turn = 1;
         // Información inicial 
