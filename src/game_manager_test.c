@@ -16,8 +16,8 @@ static bool primer_usuario_guardado = false;
 static game_manager *manager = NULL;
 
 // complet: si true se inicializa con ambos usuarios, sino se añade solo el primer usuario
-void server_start(const char *usuario,  bool es_primero) {
-    if (es_primero) {
+void server_start(const char *usuario) {
+    if (primer_usuario_guardado==false) {
         // Guardamos temporalmente en variables auxiliares
         strcpy(usuario_aux, usuario);
         valor_aux = generarTablero();
@@ -49,8 +49,8 @@ void server_start(const char *usuario,  bool es_primero) {
 tablero* obtener_tablero(const char *usuario) {
 
     for (int i = 0; i < 2; i++) {
-        if (strcmp(lista_usuarios[i].usuario, usuario) == 0) {
-            return &lista_usuarios[i].tablero;
+        if (strcmp(manager[i].usuario, usuario) == 0) {
+            return &manager[i].tablero;
         }
     }
 
@@ -59,12 +59,11 @@ tablero* obtener_tablero(const char *usuario) {
 }
 
 void game_manager_attack(int game_id, int x, int y, const char* user0, const char* user1) {
-    char msg_error[300];
+    char msg_error[50];
     char result[10];
     int  win;
-    printf("game_manager_attack: game_id=%d, x=%d, y=%d\n", game_id, x, y);
+    //printf("game_manager_attack: game_id=%d, x=%d, y=%d\n", game_id, x, y);
     if (x < 0 || y < 0 || x > FILAS || y > COLUMNAS){
-        char msg_error[50];
 
         snprintf(msg_error, sizeof(msg_error), "ERROR|%d|Invalid move: out of bounds", game_id);
         parse_and_handle_message(msg_error);
@@ -73,23 +72,27 @@ void game_manager_attack(int game_id, int x, int y, const char* user0, const cha
         
         tablero tablero = obtener_tablero(user1);
         //Condiciòn para ataque duplicado
-        if (tablero[x][y]==ATAQUE){
-            char msg_error[50];
+        if (tablero->grid[x][y]==ATAQUE){
             snprintf(msg_error, sizeof(msg_error), "ERROR|%d|Duplicate attack", game_id);
-            tablero->grid[x][y] = ATAQUE;
-            tablero->numero_barcos -= 1;
+            
         }
         //Verificar si acertó
         else 
         {
+
             if (tablero[x][y]==BARCO){
                 strcpy(result, "HIT");
+
+                tablero->grid[x][y] = ATAQUE;
+                tablero->numero_barcos -= 1;
             }
             else
             {
                 strcpy(result, "NO HIT");
             }
+
             
+
             //Verificar si CONTINUE o WIN
             if (tablero->numero_barcos==0)
             {
@@ -99,14 +102,14 @@ void game_manager_attack(int game_id, int x, int y, const char* user0, const cha
                 win = 0;
             }
             
-
+            
             //Definir mensajes de result y update
             char msg_result[30];
             char msg_update[30];
             
-            snprintf(msg_result, "RESULT|%d|%s|%d,%d", game_id, result, x, y);
+            snprintf(msg_result, "RESULT|%d|%s|%d,%d|%d", game_id, result, x, y, win);
 
-            snprintf(msg_result, "RESULT|%d|ENEMY %s|%d,%d", game_id, result, x, y);
+            snprintf(msg_result, "RESULT|%d|ENEMY %s|%d,%d|%d", game_id, result, x, y, win);
                 
             parse_and_handle_message(msg_result);
             parse_and_handle_message(msg_update);
@@ -177,11 +180,12 @@ void colocarBarco(tablero *tablero, int tamano) {
     } while (!puedeColocar(tablero, x, y, tamano, orientacion));
 
     // Colocar barco
-    tablero->numero_barcos +=1;
     for (int i = 0; i < tamano; i++) {
         if (orientacion == 'H') {
+            tablero->numero_barcos +=1;
             tablero->grid[x][y + i] = BARCO;
         } else {
+            tablero->numero_barcos +=1;
             tablero->grid[x + i][y] = BARCO;
         }
     }
@@ -207,13 +211,3 @@ void imprimirTablero(tablero *tablero) {
     }
 }
 
-
-// Obtener el tablero de un usuario
-tablero* obtenerTablero(char *username) {
-    for (int i = 0; i < 2; i++) {
-        if (strcmp(usuarios[i].username, username) == 0) {
-            return &usuarios[i].tablero;
-        }
-    }
-    return NULL;
-}
