@@ -37,15 +37,17 @@ typedef struct {
     int tamano;
     int cantidad;
     char nombre[20];
+    char simbolo;
+
 } TipoBarco;
 
 // Lista de barcos con sus tamaños y cantidades
 TipoBarco barcos[] = {
-    {5, 1, "Portaaviones"},
-    {4, 1, "Buque de guerra"},
-    {3, 2, "Crucero"},
-    {2, 2, "Destructor"},
-    {1, 3, "Submarino"}
+    {5, 1, "Portaaviones", 'P'},
+    {4, 1, "Buque de guerra", 'B'},
+    {3, 2, "Crucero", 'C'},
+    {2, 2, "Destructor", 'D'},
+    {1, 3, "Submarino", 'S'}
 };
 
 

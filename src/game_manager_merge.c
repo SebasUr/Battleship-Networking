@@ -6,7 +6,6 @@
 #include <string.h>
 
 #define VACIO '.'
-#define BARCO 'B'
 #define ATAQUE 'X'
 
 static char user_aux[20];
@@ -99,8 +98,21 @@ int puedeColocar(tablero *tablero, int x, int y, int tamano, char orientacion) {
     return 1;
 }
 
+
+void boardToString(board *tablero, char *buffer, int buffer_size) {
+    int offset = 0;
+    for (int i = 0; i < FILAS; i++) {
+        for (int j = 0; j < COLUMNAS; j++) {
+            if (tablero->grid[i][j] != VACIO) {
+                offset += snprintf(buffer + offset, buffer_size - offset, "%d,%d,%c;", i, j, tablero->grid[i][j]);
+                if (offset >= buffer_size) return;
+            }
+        }
+    }
+}
+
 // Colocar un barco en el tablero
-void colocarBarco(tablero *tablero, int tamano) {
+void colocarBarco(tablero *tablero, int tamano, char symbol) {
     int x, y;
     char orientacion;
     do {
@@ -113,10 +125,10 @@ void colocarBarco(tablero *tablero, int tamano) {
     for (int i = 0; i < tamano; i++) {
         if (orientacion == 'H') {
             tablero->numero_barcos +=1;
-            tablero->grid[x][y + i] = BARCO;
+            tablero->grid[x][y + i] = symbol;
         } else {
             tablero->numero_barcos +=1;
-            tablero->grid[x + i][y] = BARCO;
+            tablero->grid[x + i][y] = symbol;
         }
     }
 }
@@ -126,7 +138,7 @@ void generarTablero() {
     inicializarTablero();
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < barcos[i].cantidad; j++) {
-            colocarBarco(tablero, barcos[i].tamano);
+            colocarBarco(tablero, barcos[i].tamano, barcos[i].symbol);
         }
     }
 }
@@ -139,3 +151,4 @@ void imprimirTablero(tablero *tablero) {
         }
         printf("\n");
     }
+}

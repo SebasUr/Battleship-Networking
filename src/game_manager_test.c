@@ -82,7 +82,7 @@ void game_manager_attack(int game_id, int x, int y, const char* user0, const cha
         else 
         {
 
-            if (tablero[x][y]==BARCO){
+            if (tablero[x][y]!=ATAQUE && tablero[x][y]!=VACIO){
                 strcpy(result, "HIT");
 
                 tablero->grid[x][y] = ATAQUE;

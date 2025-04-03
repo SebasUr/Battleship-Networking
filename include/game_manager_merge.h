@@ -1,5 +1,7 @@
 #ifndef GAME_MANAGER_H
 #define GAME_MANAGER_H
+#define FILAS 10
+#define COLUMNAS 10
 
 #include "protocol.h"
 
@@ -21,15 +23,17 @@ typedef struct {
     int tamano;
     int cantidad;
     char nombre[20];
+    char symbol;
+
 } TipoBarco;
 
 // Lista de barcos con sus tamaños y cantidades
 TipoBarco barcos[] = {
-    {5, 1, "Portaaviones"},
-    {4, 1, "Buque de guerra"},
-    {3, 2, "Crucero"},
-    {2, 2, "Destructor"},
-    {1, 3, "Submarino"}
+    {5, 1, "Portaaviones", 'P'},
+    {4, 1, "Buque de guerra", 'B'},
+    {3, 2, "Crucero", 'C'},
+    {2, 2, "Destructor", 'D'},
+    {1, 3, "Submarino", 'S'}
 };
 
 // Procesa el login. Recibe:
