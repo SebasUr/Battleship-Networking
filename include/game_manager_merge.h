@@ -6,13 +6,13 @@
 typedef struct {
     char grid[FILAS][COLUMNAS];
     int numero_barcos;
- }tablero;
+} board;
 
 
 // Estructura para seguir el estado de la partida de ambos usuarios
 typedef struct {
-    char *usuario;
-    tablero tablero;
+    char *user;
+    board board;
 } game_manager;
 
 
@@ -56,9 +56,6 @@ void generarTablero(tablero *tablero);
 
 // Imprime el tablero.
 void imprimirTablero(tablero *tablero);
-
-// Agrega un usuario.
-void agregarUsuario(char *username);
 
 // Obtiene el tablero de un usuario
 GameManager* obtenerTablero(char *username);

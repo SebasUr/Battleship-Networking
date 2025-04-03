@@ -22,6 +22,7 @@ void server_start(const char *usuario) {
         strcpy(usuario_aux, usuario);
         valor_aux = generarTablero();
         primer_elemento_guardado = true;
+
     } else {
         if (!primer_elemento_guardado) {
             printf("Error: El primer usuario no ha sido guardado.\n");
@@ -42,6 +43,7 @@ void server_start(const char *usuario) {
         // Insertar el segundo elemento recibido
         strcpy(manager[1].usuario, usuario);
         manager[1].tablero = generarTablero();
+        
     }
 }
 
