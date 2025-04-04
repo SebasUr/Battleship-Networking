@@ -123,6 +123,67 @@ int game_manager_process_attack(int game_id, const char* attacker, const char* e
     return 2;
 }
 
+
+int game_manager_process_attack_1(int game_id, const char* attacker, const char* enemy, int x, int y,
+    char* attackerResponse, size_t attackerResponseSize,
+    char* enemyResponse, size_t enemyResponseSize) {
+    
+    char msg_error[50];
+    char result[10];
+    int  win;
+
+    if (x < 0 || y < 0 || x > ROW || y > COLUMNS){
+
+        snprintf(msg_error, sizeof(msg_error), "Invalid move: out of bounds");
+        //parse_and_handle_message(msg_error);
+    }
+    else{
+        
+        Board board = getBoard(enemy);
+        //Condición para ataque duplicado
+        if (board->grid[x][y]==HIT){
+            snprintf(msg_error, sizeof(msg_error), "Duplicate attack");
+            
+        }
+        //Verificar si acertó
+        else 
+        {
+
+            if (board->grid[x][y]!=HIT && board->grid[x][y]!=EMPTY){
+                strncpy(result, "HIT", sizeof(result));
+
+                board->grid[x][y] = HIT;
+                board->num_ships -= 1;
+            }
+            else
+            {
+                strcpy(result, "NO HIT", sizeof(result));
+            }
+
+            
+
+            //Verificar si el juego sigue o finaliza
+            //0 para continuar, 1 para finalizar
+            if (board->num_ships==0)
+            {
+                win = 1;
+            }
+            else{
+                win = 0;
+            }
+            
+            
+            //Se asignan los datos para mensaje de atacante y enemigo
+            snprintf(attackerResponse, sizeof(attackerResponse), "%s|%d", result, win);
+
+            snprintf(enemyResponse,  sizeof(enemyResponse), "%s|%d", result, win);
+                
+        
+        }
+    }
+}
+
+
 /*
  * Función: initializeBoard
  * ----------------------------
