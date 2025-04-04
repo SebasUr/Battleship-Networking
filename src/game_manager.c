@@ -48,9 +48,6 @@ int game_manager_process_login(int game_id, const char* username,
         snprintf(initial_info, initial_info_size, "%s", board_str);
         printBoard(aux_board);  // Imprimimos el tablero para verificar.
     } else {
-        // Segundo usuario que se conecta.
-        *turn = 0;  // Se asigna turno 0.
-        
         // Creamos el GameManager con memoria dinámica para 2 estados.
         manager = (GameManager *)malloc(sizeof(GameManager));
         if (!manager) {
@@ -83,106 +80,60 @@ int game_manager_process_login(int game_id, const char* username,
     return 0;
 }
 
-/*
- * Función: game_manager_process_attack
- * ----------------------------
- * Procesa un ataque en la partida.
- *
- * Dependiendo del valor de attackValue:
- *   - Si es 1 (ataque normal), se generan respuestas simples.
- *   - Si es 3 (ataque decisivo), se generan respuestas indicando fin de juego.
- *
- * Parámetros:
- *   game_id: ID de la partida.
- *   attacker: Nombre del atacante.
- *   enemy: Nombre del defensor.
- *   attackValue: Valor del ataque (1 o 3).
- *   attackerResponse: Buffer donde se escribirá la respuesta para el atacante.
- *   attackerResponseSize: Tamaño del buffer del atacante.
- *   enemyResponse: Buffer donde se escribirá la respuesta para el defensor.
- *   enemyResponseSize: Tamaño del buffer del defensor.
- *
- * Retorna: 2 (convención: dos mensajes generados).
- */
-int game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int attackValue,
-                                char* attackerResponse, size_t attackerResponseSize,
-                                char* enemyResponse, size_t enemyResponseSize) {
-    if (attackValue == 1) { 
-        // Ataque normal.
-        snprintf(attackerResponse, attackerResponseSize, "%s|0", attacker);
-        snprintf(enemyResponse, enemyResponseSize, "%s|1", enemy);
-    } else if (attackValue == 3) {
-        // Ataque decisivo (fin del juego).
-        snprintf(attackerResponse, attackerResponseSize, "%s|1", attacker);
-        snprintf(enemyResponse, enemyResponseSize, "%s|0", enemy);
-    } else {
-        // Valor de ataque no reconocido.
-        snprintf(attackerResponse, attackerResponseSize, "Error|0");
-        snprintf(enemyResponse, enemyResponseSize, "Error|0");
-    }
-    return 2;
-}
-
-
-int game_manager_process_attack_1(int game_id, const char* attacker, const char* enemy, int x, int y,
+// 0,1 Corresponde a error por Bounds y Ataque Duplicado
+// 1 Corresponde a ataque existoso
+void game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int x, int y,
     char* attackerResponse, size_t attackerResponseSize,
-    char* enemyResponse, size_t enemyResponseSize) {
+    char* enemyResponse, size_t enemyResponseSize, 
+    int* decision) {
     
     char msg_error[50];
     char result[10];
-    int  win;
-
-    if (x < 0 || y < 0 || x > ROW || y > COLUMNS){
-
-        snprintf(msg_error, sizeof(msg_error), "Invalid move: out of bounds");
-        //parse_and_handle_message(msg_error);
-    }
-    else{
-        
-        Board board = getBoard(enemy);
-        //Condición para ataque duplicado
-        if (board->grid[x][y]==HIT){
-            snprintf(msg_error, sizeof(msg_error), "Duplicate attack");
-            
+    
+    if (x < 0 || y < 0 || x >= ROWS || y >= COLUMNS) {
+        snprintf(attackerResponse, attackerResponseSize, "OOB|1");
+        *decision = 0;
+    } else {
+        GameState* state = getBoard(enemy);
+        if (state == NULL) {
+            snprintf(attackerResponse, attackerResponseSize, "Error|NoBoard");
+            *decision = 0;
+            return;
         }
-        //Verificar si acertó
-        else 
-        {
-
-            if (board->grid[x][y]!=HIT && board->grid[x][y]!=EMPTY){
+        Board *board = &state->board;
+        
+        
+        if (board->grid[x][y] == HIT) {
+            snprintf(msg_error, sizeof(msg_error), "DA|1");
+            strncpy(attackerResponse, msg_error, attackerResponseSize-1);
+            attackerResponse[attackerResponseSize-1] = '\0';
+            *decision = 1;
+        } else {
+            if (board->grid[x][y] != HIT && board->grid[x][y] != EMPTY) {
                 strncpy(result, "HIT", sizeof(result));
-
+                result[sizeof(result)-1] = '\0';
                 board->grid[x][y] = HIT;
                 board->num_ships -= 1;
-            }
-            else
-            {
-                strcpy(result, "NO HIT", sizeof(result));
-            }
-
-            
-
-            //Verificar si el juego sigue o finaliza
-            //0 para continuar, 1 para finalizar
-            if (board->num_ships==0)
-            {
-                win = 1;
-            }
-            else{
-                win = 0;
+            } else {
+                strncpy(result, "NOHIT", sizeof(result));
+                result[sizeof(result)-1] = '\0';
             }
             
-            
-            //Se asignan los datos para mensaje de atacante y enemigo
-            snprintf(attackerResponse, sizeof(attackerResponse), "%s|%d", result, win);
-
-            snprintf(enemyResponse,  sizeof(enemyResponse), "%s|%d", result, win);
-                
-        
+            if (board->num_ships == 0) {
+                snprintf(attackerResponse, attackerResponseSize, "%s|%s", result, attacker);
+                snprintf(enemyResponse, enemyResponseSize, "%s|%s", result, attacker);
+                *decision = 3;
+            } else {
+                snprintf(attackerResponse, attackerResponseSize, "%s|0", result);
+                snprintf(enemyResponse, enemyResponseSize, "%s|1", result);
+                *decision = 2;
+            }
         }
+        printBoard(*board);
     }
-}
 
+      // Imprimimos el tablero para verificar.
+}
 
 /*
  * Función: initializeBoard
@@ -275,8 +226,10 @@ Board generateBoard() {
     };
     int numShips = sizeof(ships) / sizeof(ships[0]);
     
+    //     for (int i = 0; i < numShips; i++) {
+
     // Colocar cada tipo de barco.
-    for (int i = 0; i < numShips; i++) {
+    for (int i = 0; i < 1; i++) {
         for (int j = 0; j < ships[i].quantity; j++) {
             placeShip(&board, ships[i].size, ships[i].symbol);
         }

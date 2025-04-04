@@ -38,9 +38,10 @@ int game_manager_process_login(int game_id, const char* username,
                                int* turn);
 
 // Procesa un ataque. (Ya definido en versiones anteriores)
-int game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int attackValue,
+void game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int x, int y,
                                 char* attackerResponse, size_t attackerResponseSize,
-                                char* enemyResponse, size_t enemyResponseSize);
+                                char* enemyResponse, size_t enemyResponseSize, 
+                                int* decision);
 
 // Funciones para el manejo del tablero:
 

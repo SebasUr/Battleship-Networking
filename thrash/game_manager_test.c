@@ -1,4 +1,4 @@
-#include "game_manager.h"
+#include "game_manager_test.h"
 #include <stdio.h>
 #include <stdio.h>
 #include <stdlib.h>

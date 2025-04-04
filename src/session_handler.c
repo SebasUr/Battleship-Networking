@@ -9,7 +9,7 @@
 
 #define MAX 1024
 
-// Supongamos que la sesión ahora procesa mensajes y, según el tipo, delega al game_handler.
+// Función de manejo de sesión: recibe mensajes de ambos clientes y, si se trata de un ataque, llama al game_manager.
 void *session_handler(void *arg) {
     session_pair_t *session = (session_pair_t *)arg;
     int sock1 = session->client_sock1;
@@ -44,26 +44,34 @@ void *session_handler(void *arg) {
             if (n <= 0) { printf("%s desconectado.\n", username1); break; }
             printf("%s envía: %s", username1, buff);
             
-            // Si es un mensaje de ataque, procesarlo.
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                // Se espera que msg.data contenga "enemyUsername|attackValue"
-                char enemy[50];
-                int attackValue;
-                if (sscanf(msg.data, "%49[^|]|%d", enemy, &attackValue) != 2) {
+                // Se espera que msg.data contenga dos enteros "x,y"
+                int x, y;
+                if (sscanf(msg.data, "%d,%d", &x, &y) != 2) {
                     printf("Error al parsear ATTACK de %s.\n", username1);
                 } else {
                     // Llamar al game_manager para procesar el ataque.
                     char attackerResp[256], enemyResp[256];
-                    game_manager_process_attack(game_id, username1, enemy, attackValue,
+                    int decision;
+                    game_manager_process_attack(game_id, username1, username2, x, y,
                                                 attackerResp, sizeof(attackerResp),
-                                                enemyResp, sizeof(enemyResp));
+                                                enemyResp, sizeof(enemyResp),
+                                                &decision);
                     
-                    // Dependiendo del valor de attackValue, decidimos qué comando enviar.
                     ProtocolMessage responseMsg;
                     char responseStr[MAX];
-                    if (attackValue == 1) { // Ataque normal.
-                        // Enviar RESULT al atacante.
+
+                    if (decision == 0 || decision == 1) { // Caso: Error (OutOfBounds o Ataque duplicado)
+                        responseMsg.type = MSG_ERROR;
+                        responseMsg.game_id = game_id;
+                        strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
+                        responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
+                        format_message(responseMsg, responseStr, MAX);
+                        write(sock1, responseStr, strlen(responseStr));
+                    }
+
+                    if (decision == 2) { // Ataque válido
                         responseMsg.type = MSG_RESULT;
                         responseMsg.game_id = game_id;
                         strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
@@ -77,8 +85,9 @@ void *session_handler(void *arg) {
                         responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                         format_message(responseMsg, responseStr, MAX);
                         write(sock2, responseStr, strlen(responseStr));
-                    } else if (attackValue == 3) { // Ataque decisivo (fin del juego).
-                        // Enviar END al ganador (atacante).
+                    }
+
+                    if (decision == 3) { // Ataque decisivo (fin del juego)
                         responseMsg.type = MSG_END;
                         responseMsg.game_id = game_id;
                         strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
@@ -86,7 +95,6 @@ void *session_handler(void *arg) {
                         format_message(responseMsg, responseStr, MAX);
                         write(sock1, responseStr, strlen(responseStr));
                         
-                        // Enviar END al perdedor (defensor).
                         responseMsg.type = MSG_END;
                         strncpy(responseMsg.data, enemyResp, sizeof(responseMsg.data)-1);
                         responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
@@ -95,12 +103,12 @@ void *session_handler(void *arg) {
                     }
                 }
             } else {
-                // Para otros mensajes, simplemente se reenvían (o se procesan según corresponda).
+                // Si no es un mensaje de ataque, se reenvía al otro cliente.
                 write(sock2, buff, n);
             }
         }
         
-        // Procesar mensajes del segundo cliente (similar).
+        // Procesar mensajes del segundo cliente (lógica similar, roles invertidos).
         if (FD_ISSET(sock2, &readfds)) {
             memset(buff, 0, MAX);
             n = read(sock2, buff, MAX);
@@ -109,18 +117,29 @@ void *session_handler(void *arg) {
             
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                char enemy[50];
-                int attackValue;
-                if (sscanf(msg.data, "%49[^|]|%d", enemy, &attackValue) != 2) {
+                int x, y;
+                if (sscanf(msg.data, "%d,%d", &x, &y) != 2) {
                     printf("Error al parsear ATTACK de %s.\n", username2);
                 } else {
                     char attackerResp[256], enemyResp[256];
-                    game_manager_process_attack(game_id, username2, enemy, attackValue,
+                    int decision;
+                    game_manager_process_attack(game_id, username2, username1, x, y,
                                                 attackerResp, sizeof(attackerResp),
-                                                enemyResp, sizeof(enemyResp));
+                                                enemyResp, sizeof(enemyResp),
+                                                &decision);
+                    
                     ProtocolMessage responseMsg;
                     char responseStr[MAX];
-                    if (attackValue == 1) {
+                    if (decision == 0 || decision == 1) {
+                        responseMsg.type = MSG_ERROR;
+                        responseMsg.game_id = game_id;
+                        strncpy(responseMsg.data, "Invalid Attack", sizeof(responseMsg.data)-1);
+                        responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
+                        format_message(responseMsg, responseStr, MAX);
+                        write(sock2, responseStr, strlen(responseStr));
+                    }
+                    
+                    if (decision == 2) {
                         responseMsg.type = MSG_RESULT;
                         responseMsg.game_id = game_id;
                         strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
@@ -133,7 +152,9 @@ void *session_handler(void *arg) {
                         responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                         format_message(responseMsg, responseStr, MAX);
                         write(sock1, responseStr, strlen(responseStr));
-                    } else if (attackValue == 3) {
+                    }
+                    
+                    if (decision == 3) {
                         responseMsg.type = MSG_END;
                         responseMsg.game_id = game_id;
                         strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
