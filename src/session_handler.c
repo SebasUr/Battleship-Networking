@@ -133,7 +133,7 @@ void *session_handler(void *arg) {
                     if (decision == 0 || decision == 1) {
                         responseMsg.type = MSG_ERROR;
                         responseMsg.game_id = game_id;
-                        strncpy(responseMsg.data, "Invalid Attack", sizeof(responseMsg.data)-1);
+                        strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
                         responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                         format_message(responseMsg, responseStr, MAX);
                         write(sock2, responseStr, strlen(responseStr));

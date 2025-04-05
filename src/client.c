@@ -20,7 +20,8 @@ void update_turn(const char* message) {
     if (sscanf(message, "LOGGED|%*d|%*[^|]|%d|", &turn) == 1 ||
         sscanf(message, "RESULT|%*d|%*[^|]|%d", &turn) == 1 ||
         sscanf(message, "UPDATE|%*d|%*[^|]|%d", &turn) == 1 ||
-        sscanf(message, "END|%*d|%*[^|]|%d", &turn) == 1) {
+        sscanf(message, "END|%*d|%*[^|]|%d", &turn) == 1 ||
+        sscanf(message, "ERROR|%*d|%*[^|]|%d", &turn) == 1) {
         myTurn = turn;
         printf("Turno actualizado a: %d\n", myTurn);
     }
