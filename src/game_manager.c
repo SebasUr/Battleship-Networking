@@ -49,6 +49,7 @@ int game_manager_process_login(int game_id, const char* username,
         printBoard(aux_board);  // Imprimimos el tablero para verificar.
     } else {
         // Creamos el GameManager con memoria dinámica para 2 estados.
+        *turn = 0;
         manager = (GameManager *)malloc(sizeof(GameManager));
         if (!manager) {
             printf("Error de asignación de memoria.\n");

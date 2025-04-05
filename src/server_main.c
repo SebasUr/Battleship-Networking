@@ -192,6 +192,10 @@ int main() {
                 // Primer cliente en la sala para este game_id.
                 // El turno que devuelve game_manager ya debería ser 1.
                 turn = 1;
+                snprintf(temp_data, sizeof(temp_data), "Ok|%d|%s", turn, initial_info);
+                strncpy(ackMsg.data, temp_data, sizeof(ackMsg.data)-1);
+                ackMsg.data[sizeof(ackMsg.data)-1] = '\0';
+                format_message(ackMsg, formatted_ack, MAX);
                 write(client_sock, formatted_ack, strlen(formatted_ack));
                 printf("Cliente %d autenticado como %s en partida %d. (Turno: %d)\n", client_id, username, game_id, turn);
                 
