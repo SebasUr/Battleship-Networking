@@ -106,28 +106,21 @@ void *session_handler(void *arg) {
         
         if (activity < 0) { perror("select error"); break; }
         if (activity == 0) {
-            
             printf("Timeout: ningún mensaje recibido en 30 segundos. Cambiando turno automáticamente.\n");
 
             char attackerResp[10], enemyResp[10];
-            snprintf(attackerResp, sizeof(attackerResp), "TIMEOUT|0");
-            snprintf(enemyResp, sizeof(enemyResp), "TIMEOUT|1");
+            snprintf(attackerResp, sizeof(attackerResp), "-1");
+            snprintf(enemyResp, sizeof(enemyResp), "-1");
             ProtocolMessage responseMsg;
             char responseStr[MAX];
             
 
-            responseMsg.type = MSG_RESULT;
+            responseMsg.type = MSG_TIMEOUT;
             responseMsg.game_id = game_id;
             strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
             responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
             format_message(responseMsg, responseStr, MAX);
             write(sock1, responseStr, strlen(responseStr));
-            
-            // Enviar UPDATE al defensor.
-            responseMsg.type = MSG_UPDATE;
-            strncpy(responseMsg.data, enemyResp, sizeof(responseMsg.data)-1);
-            responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
-            format_message(responseMsg, responseStr, MAX);
             write(sock2, responseStr, strlen(responseStr));
             continue;
         }

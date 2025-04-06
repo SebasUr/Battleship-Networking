@@ -18,14 +18,19 @@ volatile int myTurn = 0; // 1 = tiene turno, 0 = no tiene turno
 void update_turn(const char* message) {
     int turn;
     if (sscanf(message, "LOGGED|%*d|%*[^|]|%d|", &turn) == 1 ||
-        sscanf(message, "RESULT|%*d|%*[^|]|%d", &turn) == 1 ||
-        sscanf(message, "UPDATE|%*d|%*[^|]|%d", &turn) == 1 ||
-        sscanf(message, "END|%*d|%*[^|]|%d", &turn) == 1 ||
-        sscanf(message, "ERROR|%*d|%*[^|]|%d", &turn) == 1) {
+        sscanf(message, "RESULT|%*d|%*[^|]|%d",   &turn) == 1 ||
+        sscanf(message, "UPDATE|%*d|%*[^|]|%d",   &turn) == 1 ||
+        sscanf(message, "END|%*d|%*[^|]|%d",      &turn) == 1 ||
+        sscanf(message, "ERROR|%*d|%*[^|]|%d",    &turn) == 1) {
         myTurn = turn;
         printf("Turno actualizado a: %d\n", myTurn);
     }
+    else if (strncmp(message, "TIMEOUT|", 8) == 0) {
+        myTurn = 1 - myTurn;
+        printf("Timeout recibido, turno invertido a: %d\n", myTurn);
+    }
 }
+
 
 void *read_msg(void *arg) {
     int sockfd = *(int*)arg;

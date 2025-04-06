@@ -14,7 +14,7 @@ typedef enum {
     MSG_END,     // Fin de partida.
     MSG_ERROR,   // Mensaje de error.
     MSG_INVALID, // Tipo inválido.
-    MSG_START    // (Opcional)
+    MSG_TIMEOUT    // (Opcional)
 } MessageType;
 
 // Mapeo de strings para cada tipo.
@@ -26,7 +26,8 @@ static const char* MessageTypeStr[] = {
     "UPDATE",
     "GAME_END",
     "ERROR",
-    "INVALID"
+    "INVALID",
+    "TIMEOUT"
     // "GAME_START"  // Opcional.
 };
 
