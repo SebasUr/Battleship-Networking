@@ -98,9 +98,39 @@ void *session_handler(void *arg) {
         char buff[MAX];
         int n;
         int max_sd = (sock1 > sock2) ? sock1 : sock2;
-        int activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
-        if (activity < 0) { perror("select error"); break; }
+        struct timeval timeout;
+        timeout.tv_sec = 30;
+        timeout.tv_usec = 0;
+
+        int activity = select(max_sd + 1, &readfds, NULL, NULL, &timeout); //Se añade el timeout de 30 segundos
         
+        if (activity < 0) { perror("select error"); break; }
+        if (activity == 0) {
+            
+            printf("Timeout: ningún mensaje recibido en 30 segundos. Cambiando turno automáticamente.\n");
+
+            char attackerResp[10], enemyResp[10];
+            snprintf(attackerResp, sizeof(attackerResp), "TIMEOUT|0");
+            snprintf(enemyResp, sizeof(enemyResp), "TIMEOUT|1");
+            ProtocolMessage responseMsg;
+            char responseStr[MAX];
+            
+
+            responseMsg.type = MSG_RESULT;
+            responseMsg.game_id = game_id;
+            strncpy(responseMsg.data, attackerResp, sizeof(responseMsg.data)-1);
+            responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
+            format_message(responseMsg, responseStr, MAX);
+            write(sock1, responseStr, strlen(responseStr));
+            
+            // Enviar UPDATE al defensor.
+            responseMsg.type = MSG_UPDATE;
+            strncpy(responseMsg.data, enemyResp, sizeof(responseMsg.data)-1);
+            responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
+            format_message(responseMsg, responseStr, MAX);
+            write(sock2, responseStr, strlen(responseStr));
+            continue;
+        }
         // Procesar mensajes del primer cliente.
         if (FD_ISSET(sock1, &readfds)) {
             memset(buff, 0, MAX);
