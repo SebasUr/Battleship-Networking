@@ -266,6 +266,24 @@ void create_session(waiting_client_t *waiting, int client_sock, int client_id, i
         return;
     }
 
+    session->gm = malloc(sizeof(GameManager));
+    if (!session->gm) {
+        perror("Error al asignar memoria para el GameManager");
+        close(client_sock1);
+        close(client_sock2);
+        free(session);
+        return;
+    }
+    session->gm->states = malloc(2 * sizeof(GameState));
+    if (!session->gm->states) {
+        perror("Error al asignar memoria para estados del juego");
+        close(client_sock1);
+        close(client_sock2);
+        free(session->gm);
+        free(session);
+        return;
+    }
+
     session->client_sock1 = client_sock1;
     session->client_sock2 = client_sock2;
     session->client_id1 = client_id1;

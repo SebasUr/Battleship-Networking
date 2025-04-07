@@ -9,10 +9,10 @@
 #define HIT 'X'
 
 // Variables estáticas para guardar información temporal de login.
-static char user_aux[20];
-static Board aux_board;
-static int first_user_saved = 0;  // 0 = false, 1 = true.
-static GameManager *manager = NULL;
+//static char user_aux[20];
+//static Board aux_board;
+//static int first_user_saved = 0;  // 0 = false, 1 = true.
+//static GameManager *manager = NULL;
 
 /*
  * Función: game_manager_process_login
@@ -32,108 +32,97 @@ static GameManager *manager = NULL;
  *
  * Retorna: 0 si todo sale bien.
  */
-int game_manager_process_login(int game_id, const char* username,
-                               char* initial_info, size_t initial_info_size,
-                               int* turn) {
-    // Si es el primer usuario que se conecta, se guarda su información.
-    if (first_user_saved == 0) {
-        *turn = 1; // Primer usuario tiene turno 1.
-        strcpy(user_aux, username);
-        aux_board = generateBoard();  // Generamos un tablero aleatorio.
-        first_user_saved = 1;
-        
-        // Convertimos el tablero a string.
-        char board_str[1000];
-        boardToString(aux_board, board_str, sizeof(board_str));
-        snprintf(initial_info, initial_info_size, "%s", board_str);
-        printBoard(aux_board);  // Imprimimos el tablero para verificar.
-    } else {
-        // Creamos el GameManager con memoria dinámica para 2 estados.
-        *turn = 0;
-        manager = (GameManager *)malloc(sizeof(GameManager));
-        if (!manager) {
-            printf("Error de asignación de memoria.\n");
-            return -1;
-        }
-        manager->states = (GameState *)malloc(2 * sizeof(GameState));
-        if (!manager->states) {
-            printf("Error de asignación de memoria para estados.\n");
-            free(manager);
-            return -1;
-        }
-        
-        // Insertamos el primer estado con la información guardada.
-        strcpy(manager->states[0].user, user_aux);
-        manager->states[0].board = aux_board;
-        
-        // Insertamos el segundo estado con el nuevo usuario.
-        strcpy(manager->states[1].user, username);
-        // Para este ejemplo, generamos otro tablero aleatorio para el segundo jugador.
-        manager->states[1].board = generateBoard();
-        
-        // Convertimos el tablero del segundo jugador a string para enviarlo.
-        char board_str[1000];
-        boardToString(manager->states[1].board, board_str, sizeof(board_str));
-        printBoard(manager->states[1].board);  // Imprimimos el tablero para verificar.
-        snprintf(initial_info, initial_info_size, "%s", board_str);
-    }
-    
+int game_manager_process_login(GameManager *gm, int game_id, const char* username,
+                               char* initial_info, size_t initial_info_size, int* turn) {
+    static int nextTurn = 1;
+    *turn = nextTurn;
+    nextTurn = 1 - nextTurn;
+
+    Board b = generateBoard();
+    boardToString(b, initial_info, initial_info_size);
+
+    // Guardar en el siguiente slot libre (0 o 1)
+    int idx = (*turn == 1 ? 0 : 1);
+    strcpy(gm->states[idx].user, username);
+    gm->states[idx].board = b;
+    printBoard(b);
     return 0;
 }
 
-// 0,1 Corresponde a error por Bounds y Ataque Duplicado
-// 1 Corresponde a ataque existoso
-void game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int x, int y,
+/*
+ * Procesa un ataque para una sesión concreta (GameManager *gm).
+ * - gm: puntero al gestor de la partida (contiene dos GameState).
+ * - game_id: ID de la partida (no se usa en este stub, pero se deja).
+ * - attacker, enemy: usernames del atacante y defensor.
+ * - x, y: parámetros del ataque.
+ * - attackerResponse, enemyResponse: buffers para las respuestas.
+ * - decision: salida con el tipo de resultado (0,1,2,3).
+ */
+void game_manager_process_attack(GameManager *gm, int game_id,
+    const char* attacker, const char* enemy, int x, int y,
     char* attackerResponse, size_t attackerResponseSize,
-    char* enemyResponse, size_t enemyResponseSize, 
+    char* enemyResponse, size_t enemyResponseSize,
     int* decision) {
     
     char msg_error[50];
     char result[10];
     
+    // Out of bounds
     if (x < 0 || y < 0 || x >= ROWS || y >= COLUMNS) {
         snprintf(attackerResponse, attackerResponseSize, "OOB|1");
         *decision = 0;
-    } else {
-        GameState* state = getBoard(enemy);
-        if (state == NULL) {
-            snprintf(attackerResponse, attackerResponseSize, "Error|NoBoard");
-            *decision = 0;
-            return;
-        }
-        Board *board = &state->board;
-        
-        
-        if (board->grid[x][y] == HIT) {
-            snprintf(msg_error, sizeof(msg_error), "DA|1");
-            strncpy(attackerResponse, msg_error, attackerResponseSize-1);
-            attackerResponse[attackerResponseSize-1] = '\0';
-            *decision = 1;
-        } else {
-            if (board->grid[x][y] != HIT && board->grid[x][y] != EMPTY) {
-                strncpy(result, "HIT", sizeof(result));
-                result[sizeof(result)-1] = '\0';
-                board->grid[x][y] = HIT;
-                board->num_ships -= 1;
-            } else {
-                strncpy(result, "NOHIT", sizeof(result));
-                result[sizeof(result)-1] = '\0';
-            }
-            
-            if (board->num_ships == 0) {
-                snprintf(attackerResponse, attackerResponseSize, "%s|%s", result, attacker);
-                snprintf(enemyResponse, enemyResponseSize, "%s|%s", result, attacker);
-                *decision = 3;
-            } else {
-                snprintf(attackerResponse, attackerResponseSize, "%s|0", result);
-                snprintf(enemyResponse, enemyResponseSize, "%s|1", result);
-                *decision = 2;
-            }
-        }
-        printBoard(*board);
+        return;
     }
-
-      // Imprimimos el tablero para verificar.
+    
+    // Buscar el estado del defensor en gm->states[]
+    GameState *state = NULL;
+    for (int i = 0; i < 2; i++) {
+        if (strcmp(gm->states[i].user, enemy) == 0) {
+            state = &gm->states[i];
+            break;
+        }
+    }
+    if (!state) {
+        snprintf(attackerResponse, attackerResponseSize, "Error|NoBoard");
+        *decision = 0;
+        return;
+    }
+    
+    Board *board = &state->board;
+    
+    // Ataque duplicado
+    if (board->grid[x][y] == HIT) {
+        snprintf(msg_error, sizeof(msg_error), "DA|1");
+        strncpy(attackerResponse, msg_error, attackerResponseSize-1);
+        attackerResponse[attackerResponseSize-1] = '\0';
+        *decision = 1;
+    } else {
+        // Verificar hit o miss
+        if (board->grid[x][y] != EMPTY) {
+            strncpy(result, "HIT", sizeof(result)-1);
+            result[sizeof(result)-1] = '\0';
+            board->grid[x][y] = HIT;
+            board->num_ships--;
+        } else {
+            strncpy(result, "NOHIT", sizeof(result)-1);
+            result[sizeof(result)-1] = '\0';
+        }
+        
+        // Fin de la partida?
+        if (board->num_ships == 0) {
+            snprintf(attackerResponse, attackerResponseSize, "%s|%s", result, attacker);
+            snprintf(enemyResponse,   enemyResponseSize,   "%s|%s", result, attacker);
+            *decision = 3;
+        } else {
+            // Ataque válido
+            snprintf(attackerResponse, attackerResponseSize, "%s|0", result);
+            snprintf(enemyResponse,   enemyResponseSize,   "%s|1", result);
+            *decision = 2;
+        }
+    }
+    
+    // Para depuración: imprimir el tablero actualizado
+    printBoard(*board);
 }
 
 /*
@@ -272,20 +261,22 @@ void printBoard(Board board) {
 }
 
 // Devuelve un puntero al GameState correspondiente al usuario dado.
+// Devuelve un puntero al GameState correspondiente al usuario dado en este GameManager.
 // Si no se encuentra, retorna NULL.
-GameState* getBoard(const char *username) {
-    if (manager == NULL || manager->states == NULL) {
-        printf("El GameManager no ha sido inicializado.\n");
+GameState* getBoard(GameManager *gm, const char *username) {
+    if (gm == NULL || gm->states == NULL) {
+        printf("El GameManager no ha sido inicializado para esta sesión.\n");
         return NULL;
     }
     
-    // Se asume que hay 2 estados almacenados en el GameManager.
+    // Se asume que gm->states tiene 2 elementos
     for (int i = 0; i < 2; i++) {
-        if (strcmp(manager->states[i].user, username) == 0) {
-            return &manager->states[i];
+        if (strcmp(gm->states[i].user, username) == 0) {
+            return &gm->states[i];
         }
     }
     
     printf("No se encontró un GameState para el usuario: %s\n", username);
     return NULL;
 }
+
