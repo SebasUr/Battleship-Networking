@@ -1,6 +1,7 @@
 #ifndef SESSION_HANDLER_H
 #define SESSION_HANDLER_H
 #include "protocol.h"
+#include "game_manager.h"
 
 typedef struct {
     int client_sock1;
@@ -10,10 +11,11 @@ typedef struct {
     int game_id;           // Nuevo: ID de partida
     char username1[50];
     char username2[50];
+    GameManager *gm;   
 } session_pair_t;
 
 // Función que será ejecutada por cada hilo para manejar la sesión de chat.
 void *session_handler(void *arg);
-void process_messages(int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg);
+void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg);
 
 #endif // SESSION_HANDLER_H

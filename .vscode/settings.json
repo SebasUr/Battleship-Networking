@@ -4,6 +4,13 @@
         "in.h": "c",
         "random": "c",
         "time.h": "c",
-        "game_manager.h": "c"
+        "game_manager.h": "c",
+        "string.h": "c",
+        "stdio.h": "c",
+        "session_handler.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "span": "c"
     }
 }

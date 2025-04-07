@@ -33,12 +33,12 @@ typedef struct {
 // - initial_info_size: Tamaño del buffer.
 // - turn: Salida para indicar el turno asignado (1 para el primero, 0 para el segundo).
 // La función retorna 0 si todo sale bien o un código de error.
-int game_manager_process_login(int game_id, const char* username,
+int game_manager_process_login(GameManager *gm, int game_id, const char* username,
                                char* initial_info, size_t initial_info_size,
                                int* turn);
 
 // Procesa un ataque. (Ya definido en versiones anteriores)
-void game_manager_process_attack(int game_id, const char* attacker, const char* enemy, int x, int y,
+void game_manager_process_attack(GameManager *gm, int game_id, const char* attacker, const char* enemy, int x, int y,
                                 char* attackerResponse, size_t attackerResponseSize,
                                 char* enemyResponse, size_t enemyResponseSize, 
                                 int* decision);
@@ -66,6 +66,6 @@ void boardToString(Board board, char *buffer, int buffer_size);
 void printBoard(Board board);
 
 // (Opcional) Obtiene el estado de la partida para un usuario (para extender en el futuro).
-GameState* getBoard(const char *username);
+GameState* getBoard(GameManager *gm, const char *username);
 
 #endif // GAME_MANAGER_H

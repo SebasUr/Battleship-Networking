@@ -127,10 +127,11 @@ void handle_client_connection(int client_sock, int client_id, struct sockaddr_in
     username[sizeof(username) - 1] = '\0';
 
      // Procesar el login mediante game_manager.
-    ProtocolMessage ackMsg;
+
+    /*ProtocolMessage ackMsg;
     ackMsg.type = MSG_LOGGED;
     ackMsg.game_id = game_id;
-    char initial_info[100];
+    char initial_info[100];*/
     int turn;
 
     // Buscar en la lista de salas si la sala con el game_id está ocupada.
@@ -139,6 +140,10 @@ void handle_client_connection(int client_sock, int client_id, struct sockaddr_in
     if(room!=NULL){
         empty_room = false;
     }
+
+
+
+    /*
     if(empty_room){
         if (game_manager_process_login(game_id, username, initial_info, sizeof(initial_info), &turn) != 0) {
             printf("Error en game_manager_process_login para Cliente %d.\n", client_id);
@@ -146,19 +151,15 @@ void handle_client_connection(int client_sock, int client_id, struct sockaddr_in
             return;
         }
     }
+    */
 
     // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
     // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>
-    char temp_data[150];
-    if (empty_room) {
-        snprintf(temp_data, sizeof(temp_data), "Ok|%d|%s", turn, initial_info);
-    } else {
-        turn = -1;
-        snprintf(temp_data, sizeof(temp_data), "NO|%d", turn);
-    }
 
+    /*
     strncpy(ackMsg.data, temp_data, sizeof(ackMsg.data) - 1);
     ackMsg.data[sizeof(ackMsg.data) - 1] = '\0';
+    */
 
     waiting_client_t *waiting = pop_waiting_client(waiting_list, game_id);
 
@@ -167,12 +168,13 @@ void handle_client_connection(int client_sock, int client_id, struct sockaddr_in
             // Primer cliente en la sala para este game_id.
             // El turno que devuelve game_manager ya debería ser 1.
             turn = 1;
-            snprintf(temp_data, sizeof(temp_data), "Ok|%d|%s", turn, initial_info);
+
+            /*snprintf(temp_data, sizeof(temp_data), "Ok|%d|%s", turn, initial_info);
             strncpy(ackMsg.data, temp_data, sizeof(ackMsg.data)-1);
             ackMsg.data[sizeof(ackMsg.data)-1] = '\0';
-            send_login_ack(client_sock, &ackMsg);
+            send_login_ack(client_sock, &ackMsg);*/
             printf("Cliente %d autenticado como %s en partida %d. (Turno: %d)\n", client_id, username, game_id, turn);
-
+            
             // Agregar este cliente a la lista de espera.
             waiting_client_t *new_waiting = malloc(sizeof(waiting_client_t));
             if (!new_waiting) {
@@ -195,10 +197,11 @@ void handle_client_connection(int client_sock, int client_id, struct sockaddr_in
             // Se encontró un cliente esperando con el mismo game_id: este es el segundo.
             // Para el segundo cliente, forzamos turno = 0.
             turn = 0;
+            /*
             snprintf(temp_data, sizeof(temp_data), "Ok|%d|%s", turn, initial_info);
             strncpy(ackMsg.data, temp_data, sizeof(ackMsg.data) - 1);
             ackMsg.data[sizeof(ackMsg.data) - 1] = '\0';
-            send_login_ack(client_sock, &ackMsg);
+            send_login_ack(client_sock, &ackMsg);*/
             printf("Cliente %d autenticado como %s en partida %d. (Turno: %d)\n", client_id, username, game_id, turn);
 
             // Emparejar: el cliente que estaba en espera (primero) y este segundo cliente.
@@ -206,6 +209,10 @@ void handle_client_connection(int client_sock, int client_id, struct sockaddr_in
         }
     } else {
         turn = -1;
+        ProtocolMessage ackMsg;
+        ackMsg.type = MSG_LOGGED;
+        ackMsg.game_id = game_id;
+        char temp_data[150];
         snprintf(temp_data, sizeof(temp_data), "NO|%d", turn);
         strncpy(ackMsg.data, temp_data, sizeof(ackMsg.data)-1);
         ackMsg.data[sizeof(ackMsg.data)-1] = '\0';
@@ -256,6 +263,24 @@ void create_session(waiting_client_t *waiting, int client_sock, int client_id, i
         close(client_sock1);
         close(client_sock2);
         search_room(rooms_list, game_id, true);
+        return;
+    }
+
+    session->gm = malloc(sizeof(GameManager));
+    if (!session->gm) {
+        perror("Error al asignar memoria para el GameManager");
+        close(client_sock1);
+        close(client_sock2);
+        free(session);
+        return;
+    }
+    session->gm->states = malloc(2 * sizeof(GameState));
+    if (!session->gm->states) {
+        perror("Error al asignar memoria para estados del juego");
+        close(client_sock1);
+        close(client_sock2);
+        free(session->gm);
+        free(session);
         return;
     }
 

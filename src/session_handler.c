@@ -6,12 +6,13 @@
 #include "session_handler.h"
 #include "protocol.h"
 #include "game_manager.h"
+#include "Utils.h"
 
 #define MAX 1024
 
 
 //Función para procesar mensajes de usuarios
-void process_messages(int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg){
+void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg){
     
         // Se espera que msg.data contenga dos enteros "x,y"
         int x, y;
@@ -21,7 +22,7 @@ void process_messages(int sock1, int sock2, int game_id, const char* username1, 
             // Llamar al game_manager para procesar el ataque.
             char attackerResp[256], enemyResp[256];
             int decision;
-            game_manager_process_attack(game_id, username1, username2, x, y,
+            game_manager_process_attack(gm, game_id, username1, username2, x, y,
                                         attackerResp, sizeof(attackerResp),
                                         enemyResp, sizeof(enemyResp),
                                         &decision);
@@ -75,18 +76,39 @@ void process_messages(int sock1, int sock2, int game_id, const char* username1, 
 // Función de manejo de sesión: recibe mensajes de ambos clientes y, si se trata de un ataque, llama al game_manager.
 void *session_handler(void *arg) {
     session_pair_t *session = (session_pair_t *)arg;
-    int sock1 = session->client_sock1;
-    int sock2 = session->client_sock2;
+    int sock1 = session->client_sock1; int sock2 = session->client_sock2;
     int game_id = session->game_id;
-    char username1[50], username2[50];
+    char username1[50]; char username2[50];
     strncpy(username1, session->username1, sizeof(username1));
     username1[sizeof(username1)-1] = '\0';
     strncpy(username2, session->username2, sizeof(username2));
     username2[sizeof(username2)-1] = '\0';
+    GameManager *gm = session->gm;
     free(session);
-    
-    
-    
+
+    // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
+    // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>   
+
+    ProtocolMessage ackMsg;
+    ackMsg.type = MSG_LOGGED;
+    ackMsg.game_id = game_id;
+    int turn1; int turn2;
+    char initial_info1[100]; char initial_info2[100];
+    char temp_data1[150]; char temp_data2[150];
+    char buf[MAX];
+
+    game_manager_process_login(gm, game_id, username1, initial_info1, sizeof(initial_info1), &turn1);
+    snprintf(buf,sizeof(buf),"Ok|%d|%s",turn1,initial_info1);
+    strncpy(ackMsg.data,buf,sizeof(ackMsg.data)-1); ackMsg.data[sizeof(ackMsg.data)-1]=0;
+    format_message(ackMsg,buf,MAX); write(sock1,buf,strlen(buf));
+    printf("Enviando a %s: %s\n",username1,buf);
+
+    game_manager_process_login(gm, game_id, username2, initial_info2, sizeof(initial_info2), &turn2);
+    turn2 = 0;
+    snprintf(buf,sizeof(buf),"Ok|%d|%s",turn2,initial_info2);
+    strncpy(ackMsg.data,buf,sizeof(ackMsg.data)-1); ackMsg.data[sizeof(ackMsg.data)-1]=0;
+    format_message(ackMsg,buf,MAX); write(sock2,buf,strlen(buf));
+
     printf("Iniciando sesión de chat entre %s y %s en partida %d...\n", username1, username2, game_id);
     
     // Bucle principal de la sesión.
@@ -133,7 +155,7 @@ void *session_handler(void *arg) {
             
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                process_messages(sock1, sock2, game_id, username1, username2, msg);   
+                process_messages(gm, sock1, sock2, game_id, username1, username2, msg);   
             } else{
                 write(sock2, buff, n);
             } 
@@ -148,7 +170,7 @@ void *session_handler(void *arg) {
             
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                process_messages(sock2, sock1, game_id, username2, username1, msg);   
+                process_messages(gm, sock2, sock1, game_id, username2, username1, msg);   
             } else{
                 write(sock1, buff, n);
             } 

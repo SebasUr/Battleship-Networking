@@ -7,10 +7,9 @@
 #include <sys/socket.h>  
 #include <arpa/inet.h>  
 
-
-
 #define PORT 8080
 #define MAX 1024
+
 int main() {
     // Crear el socket de escucha.
     int sockfd = setup_server_socket();
