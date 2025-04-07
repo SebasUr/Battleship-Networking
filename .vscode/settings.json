@@ -1,0 +1,9 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "in.h": "c",
+        "random": "c",
+        "time.h": "c",
+        "game_manager.h": "c"
+    }
+}
