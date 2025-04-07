@@ -8,12 +8,6 @@
 #define EMPTY '.'
 #define HIT 'X'
 
-// Variables estáticas para guardar información temporal de login.
-//static char user_aux[20];
-//static Board aux_board;
-//static int first_user_saved = 0;  // 0 = false, 1 = true.
-//static GameManager *manager = NULL;
-
 /*
  * Función: game_manager_process_login
  * ----------------------------
@@ -38,14 +32,14 @@ int game_manager_process_login(GameManager *gm, int game_id, const char* usernam
     *turn = nextTurn;
     nextTurn = 1 - nextTurn;
 
-    Board b = generateBoard();
-    boardToString(b, initial_info, initial_info_size);
+    Board myboard = generateBoard();
+    boardToString(myboard, initial_info, initial_info_size);
 
     // Guardar en el siguiente slot libre (0 o 1)
     int idx = (*turn == 1 ? 0 : 1);
     strcpy(gm->states[idx].user, username);
-    gm->states[idx].board = b;
-    printBoard(b);
+    gm->states[idx].board = myboard;
+    printBoard(myboard);
     return 0;
 }
 
@@ -116,7 +110,7 @@ void game_manager_process_attack(GameManager *gm, int game_id,
         } else {
             // Ataque válido
             snprintf(attackerResponse, attackerResponseSize, "%s|0", result);
-            snprintf(enemyResponse,   enemyResponseSize,   "%s|1", result);
+            snprintf(enemyResponse,   enemyResponseSize,   "%s|%d,%d|1", result,x,y);
             *decision = 2;
         }
     }

@@ -86,6 +86,9 @@ void *session_handler(void *arg) {
     GameManager *gm = session->gm;
     free(session);
 
+    // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
+    // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>   
+
     ProtocolMessage ackMsg;
     ackMsg.type = MSG_LOGGED;
     ackMsg.game_id = game_id;
@@ -99,14 +102,8 @@ void *session_handler(void *arg) {
     strncpy(ackMsg.data,buf,sizeof(ackMsg.data)-1); ackMsg.data[sizeof(ackMsg.data)-1]=0;
     format_message(ackMsg,buf,MAX); write(sock1,buf,strlen(buf));
     printf("Enviando a %s: %s\n",username1,buf);
-    // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
-    // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>
 
-
-    
     game_manager_process_login(gm, game_id, username2, initial_info2, sizeof(initial_info2), &turn2);
-    // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
-    // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>
     turn2 = 0;
     snprintf(buf,sizeof(buf),"Ok|%d|%s",turn2,initial_info2);
     strncpy(ackMsg.data,buf,sizeof(ackMsg.data)-1); ackMsg.data[sizeof(ackMsg.data)-1]=0;
