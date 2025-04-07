@@ -19,7 +19,6 @@ def fill_board_from_logged_message(message):
     global MY_BOARD
     parts = message.split('|')
     if len(parts) >= 5:
-        # parts[4] contiene la lista de posiciones separadas por ';'
         for pos in parts[4].split(';'):
             if not pos:
                 continue
@@ -33,7 +32,6 @@ def fill_board_from_logged_message(message):
 
 
 def print_boards_side_by_side(b1, title1, b2, title2):
-    # Imprime dos tableros uno al lado del otro
     header1 = f"{title1}".ljust(24)
     header2 = title2
     print(f"{header1}    {header2}")
@@ -85,7 +83,6 @@ def get_last_attack_coords():
 
 
 def interpret_message(message):
-    # Mensajes de resultado de ataque propio
     if message.startswith("RESULT"):
         _, _, res = message.split('|', 2)
         if res == "HIT":
@@ -93,22 +90,20 @@ def interpret_message(message):
         elif res == "NOHIT":
             print("\nAGUA. No has golpeado ningún barco.")
     elif message.startswith("ERROR"):
-        _, _, err = message.split('|', 2)
+        _, _, err, _ = message.split('|', 3)
         if err == "OOB":
             print("\nError: Ataque fuera de los límites.")
         elif err == "DA":
-            print("\nError: Ya atacaste esa posición.")
+            print("\nError: Ya atacaste esa posición. Vuelve a intentarlo.")
 
 
 def update_board(message):
-    # Procesa RESULT para ataque propio y UPDATE para ataque recibido
     if message.startswith("RESULT"):
         parts = message.split('|')
         if len(parts) >= 3:
             r, c = get_last_attack_coords()
             ENEMY_BOARD[r][c] = 3 if parts[2] == "HIT" else 2
     elif message.startswith("UPDATE"):
-        # Formato: UPDATE|MatchID|HIT/NOHIT|r,c|turn
         parts = message.split('|')
         if len(parts) >= 5:
             res = parts[2]
@@ -122,13 +117,13 @@ def update_board(message):
                     print(f"\nTu oponente disparó en ({r},{c}) y fue AGUA.")
             except ValueError:
                 print(f"Error procesando coords de UPDATE: {parts[3]}")
-    # Después de actualizar, mostramos ambos tableros
     print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
 
 
 def update_turn(message, sock, match_id):
     global my_turn
 
+    # TIMEOUT
     if message.startswith("TIMEOUT"):
         my_turn = not my_turn
         print("\n⏰ TIMEOUT recibido. Se invierte el turno.")
@@ -140,9 +135,9 @@ def update_turn(message, sock, match_id):
             print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
         return
 
+    # LOGGED
     if message.startswith("LOGGED"):
         fill_board_from_logged_message(message)
-        # Para LOGGED, el turno está en la posición 3
         parts = message.split('|')
         if len(parts) >= 4:
             try:
@@ -154,8 +149,23 @@ def update_turn(message, sock, match_id):
             print("\n¡ES TU TURNO!")
         return
 
-    # Para RESULT, UPDATE, END y ERROR, el turno está en la posición 4
-    if any(k in message for k in ["RESULT", "UPDATE", "END", "ERROR"]):
+    # ERROR: permitir reintento si turno sigue siendo tuyo
+    if message.startswith("ERROR"):
+        parts = message.split('|')
+        if len(parts) >= 4:
+            try:
+                my_turn = (int(parts[3]) == 1)
+            except ValueError:
+                my_turn = False
+            if my_turn:
+                print("\n¡ES TU TURNO! Vuelve a ingresar coordenadas.")
+                print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
+        return
+
+    # GAME_END: handled in read_msg
+
+    # RESULT, UPDATE, END
+    if any(k in message for k in ["RESULT", "UPDATE", "END"]):
         parts = message.split('|')
         if len(parts) >= 5:
             try:
@@ -180,6 +190,16 @@ def read_msg(sock, match_id):
             if DEBUG:
                 print(f"[DEBUG] Recibido: {buff}")
 
+            # GAME_END
+            if buff.startswith("GAME_END"):
+                parts = buff.split('|')
+                if len(parts) >= 4:
+                    winner = parts[3]
+                    print(f"\n🎉 Juego terminado. Ganador: {winner}")
+                exit_flag = True
+                sock.close()
+                break
+
             interpret_message(buff)
             update_board(buff)
             update_turn(buff, sock, match_id)
@@ -193,7 +213,6 @@ def read_msg(sock, match_id):
 
 
 def handle_input(sock, match_id):
-    """Hilo dedicado a leer input SOLO cuando my_turn == True."""
     global exit_flag, my_turn
     while not exit_flag:
         if my_turn:
@@ -218,48 +237,55 @@ def handle_input(sock, match_id):
 def main():
     global exit_flag
 
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((SERVER_IP, PORT))
-        print("Conectado al servidor.")
-    except Exception as e:
-        print(f"Error de conexión: {e}")
-        return
-
     username = input("Username: ").strip()
     if not username:
         print("Username vacío.")
         return
-    try:
-        game_id = int(input("ID de partida: ").strip())
-    except ValueError:
-        print("ID inválido.")
-        return
 
-    # Mostrar tableros vacíos
-    print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((SERVER_IP, PORT))
+            print("Conectado al servidor.")
+        except Exception as e:
+            print(f"Error de conexión: {e}")
+            return
 
-    # Enviar LOGIN y procesar ACK=LOGGED
-    sock.sendall(f"LOGIN|{game_id}|{username}".encode())
-    try:
-        buff = sock.recv(MAX).decode()
-        if not buff:
-            print("No llegó respuesta del login.")
+        game_id_input = input("ID de partida: ").strip()
+        try:
+            game_id = int(game_id_input)
+        except ValueError:
+            print("ID inválido.")
+            sock.close()
+            continue
+
+        print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
+        sock.sendall(f"LOGIN|{game_id}|{username}".encode())
+        try:
+            buff = sock.recv(MAX).decode()
+            if not buff:
+                print("No llegó respuesta del login.")
+                sock.close()
+                return
+            if DEBUG:
+                print(f"[DEBUG] Recibido (login): {buff}")
+        except Exception as e:
+            print(f"Error al recibir login: {e}")
             sock.close()
             return
-        if DEBUG:
-            print(f"[DEBUG] Recibido (login): {buff}")
-        update_turn(buff, sock, game_id)
-    except Exception as e:
-        print(f"Error al recibir login: {e}")
-        sock.close()
-        return
 
-    # Arrancamos hilos de lectura y de input
+        parts = buff.split('|')
+        if parts[0] == "LOGGED" and len(parts) >= 3 and parts[2].upper() == "NO":
+            print("Sala ocupada, ingresa otro ID de partida.")
+            sock.close()
+            continue
+
+        update_turn(buff, sock, game_id)
+        break
+
     threading.Thread(target=read_msg, args=(sock, game_id), daemon=True).start()
     threading.Thread(target=handle_input, args=(sock, game_id), daemon=True).start()
 
-    # Mantenemos vivo hasta exit
     try:
         while not exit_flag:
             threading.Event().wait(1)
