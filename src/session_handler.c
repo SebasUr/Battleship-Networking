@@ -12,10 +12,11 @@
 
 
 //Función para procesar mensajes de usuarios
-void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg){
+void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg, int* end){
     
         // Se espera que msg.data contenga dos enteros "x,y"
         int x, y;
+        *end = 0;
         if (sscanf(msg.data, "%d,%d", &x, &y) != 2) {
             printf("Error al parsear ATTACK de %s.\n", username1);
         } else {
@@ -68,9 +69,9 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
                 responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                 format_message(responseMsg, responseStr, MAX);
                 write(sock2, responseStr, strlen(responseStr));
+                *end = 1;
             }
         }
-    
 }
 
 // Función de manejo de sesión: recibe mensajes de ambos clientes y, si se trata de un ataque, llama al game_manager.
@@ -84,6 +85,7 @@ void *session_handler(void *arg) {
     strncpy(username2, session->username2, sizeof(username2));
     username2[sizeof(username2)-1] = '\0';
     GameManager *gm = session->gm;
+    rooms **rooms_list = session->room;
     free(session);
 
     // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
@@ -98,6 +100,7 @@ void *session_handler(void *arg) {
     char buf[MAX];
 
     game_manager_process_login(gm, game_id, username1, initial_info1, sizeof(initial_info1), &turn1);
+    turn1 = 1;
     snprintf(buf,sizeof(buf),"Ok|%d|%s",turn1,initial_info1);
     strncpy(ackMsg.data,buf,sizeof(ackMsg.data)-1); ackMsg.data[sizeof(ackMsg.data)-1]=0;
     format_message(ackMsg,buf,MAX); write(sock1,buf,strlen(buf));
@@ -123,6 +126,7 @@ void *session_handler(void *arg) {
         struct timeval timeout;
         timeout.tv_sec = 30;
         timeout.tv_usec = 0;
+        int end = 0;
 
         int activity = select(max_sd + 1, &readfds, NULL, NULL, &timeout); //Se añade el timeout de 30 segundos
         
@@ -155,7 +159,12 @@ void *session_handler(void *arg) {
             
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                process_messages(gm, sock1, sock2, game_id, username1, username2, msg);   
+                process_messages(gm, sock1, sock2, game_id, username1, username2, msg, &end);   
+                if(end==1){
+                    
+                    search_room(rooms_list, game_id, true);
+                    break;
+                }
             } else{
                 write(sock2, buff, n);
             } 
@@ -170,7 +179,12 @@ void *session_handler(void *arg) {
             
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                process_messages(gm, sock2, sock1, game_id, username2, username1, msg);   
+                process_messages(gm, sock2, sock1, game_id, username2, username1, msg, &end);
+                if(end==1){
+                    
+                    search_room(rooms_list, game_id, true);
+                    break;
+                }
             } else{
                 write(sock1, buff, n);
             } 
