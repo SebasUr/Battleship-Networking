@@ -6,6 +6,7 @@
 #include "session_handler.h"
 #include "protocol.h"
 #include "game_manager.h"
+#include "Utils.h"
 
 #define MAX 1024
 
@@ -84,8 +85,51 @@ void *session_handler(void *arg) {
     strncpy(username2, session->username2, sizeof(username2));
     username2[sizeof(username2)-1] = '\0';
     free(session);
+
+    ProtocolMessage ackMsg;
+    ackMsg.type = MSG_LOGGED;
+    ackMsg.game_id = game_id;
+    int turn1;
+    char initial_info1[100];
+    char temp_data1[150];
     
+    int turn2;
+    char initial_info2[100];
+    char temp_data2[150];
+
+    if (game_manager_process_login(game_id, username1, initial_info1, sizeof(initial_info1), &turn1) != 0) {
+        printf("Error en game_manager_process_login para Cliente %s.\n", username1);
+        close(sock1);
+        return NULL;
+    }
+    // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
+    // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>
+
+    turn1 = 1;
+    strncpy(ackMsg.data, temp_data1, sizeof(ackMsg.data) - 1);
+    ackMsg.data[sizeof(ackMsg.data) - 1] = '\0';
+    snprintf(temp_data1, sizeof(temp_data1), "Ok|%d|%s", turn1, initial_info1);
+    strncpy(ackMsg.data, temp_data1, sizeof(ackMsg.data)-1);
+    ackMsg.data[sizeof(ackMsg.data)-1] = '\0';
+    send_login_ack(sock1, &ackMsg);
+
     
+    if (game_manager_process_login(game_id, username2, initial_info2, sizeof(initial_info2), &turn2) != 0) {
+        printf("Error en game_manager_process_login para Cliente %s.\n", username2);
+        close(sock2);
+        return NULL;
+    }
+    // Preparar el ACK usando el protocolo para tener el prefijo "LOGGED"
+    // El ACK tendrá el formato: "LOGGED|MatchID|Ok|<turn>|<initial_info>
+    turn2 = 0;
+    strncpy(ackMsg.data, temp_data2, sizeof(ackMsg.data) - 1);
+    ackMsg.data[sizeof(ackMsg.data) - 1] = '\0';
+    snprintf(temp_data2, sizeof(temp_data2), "Ok|%d|%s", turn2, initial_info2);
+    strncpy(ackMsg.data, temp_data2, sizeof(ackMsg.data)-1);
+    ackMsg.data[sizeof(ackMsg.data)-1] = '\0';
+    send_login_ack(sock2, &ackMsg);
+
+
     
     printf("Iniciando sesión de chat entre %s y %s en partida %d...\n", username1, username2, game_id);
     
