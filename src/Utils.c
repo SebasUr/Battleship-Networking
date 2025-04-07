@@ -294,6 +294,7 @@ void create_session(waiting_client_t *waiting, int client_sock, int client_id, i
     strncpy(session->username2, username2, sizeof(session->username2) - 1);
     session->username2[sizeof(session->username2) - 1] = '\0';
 
+    session->room = rooms_list;
     // Crear un hilo para manejar la sesión.
     pthread_t tid;
     if (pthread_create(&tid, NULL, session_handler, (void *)session) != 0) {
