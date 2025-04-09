@@ -15,7 +15,7 @@ const char* message_type_to_string(MessageType type) {
         "ERROR",
         "INVALID",
         "TIMEOUT"
-        // "GAME_START"  // Opcional.
+        // "GAME_START"  // Opcional
     };
     if (type >= 0 && type < (int)(sizeof(MessageTypeStr)/sizeof(MessageTypeStr[0])))
         return MessageTypeStr[type];

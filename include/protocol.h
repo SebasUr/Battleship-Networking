@@ -17,19 +17,6 @@ typedef enum {
     MSG_TIMEOUT    // (Opcional)
 } MessageType;
 
-// Mapeo de strings para cada tipo.
-/*static const char* MessageTypeStr[] = {
-    "LOGIN",
-    "LOGGED",
-    "ATTACK",
-    "RESULT",
-    "UPDATE",
-    "GAME_END",
-    "ERROR",
-    "INVALID",
-    "TIMEOUT"
-    // "GAME_START"  // Opcional.
-};*/
 
 // Estructura para representar un mensaje.
 typedef struct {
