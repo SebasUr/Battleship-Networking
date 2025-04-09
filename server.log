@@ -1,0 +1,56 @@
+Socket del servidor creado.
+
+Socket enlazado a puerto 8080.
+
+Server escuchando...
+
+Cliente 1 autenticado como johan en partida 1. (Turno: 1)
+
+Cliente 1 en espera para partida 1.
+
+Cliente 2 autenticado como juan en partida 1. (Turno: 0)
+
+Sesión creada entre Cliente 1 (johan) y Cliente 2 (juan) en partida 1.
+
+Enviando a johan: LOGGED|1|Ok|1|5,3,P;5,4,P;5,5,P;5,6,P;5,7,P;
+
+Iniciando sesión de chat entre johan y juan en partida 1...
+
+johan envía: ATTACK|1|5,5
+
+RESULT|1|NOHIT|0
+UPDATE|1|NOHIT|5,5|1
+juan envía: ATTACK|1|3,3
+
+RESULT|1|NOHIT|0
+UPDATE|1|NOHIT|3,3|1
+johan envía: ATTACK|1|2,3
+
+RESULT|1|NOHIT|0
+UPDATE|1|NOHIT|2,3|1
+Timeout: ningún mensaje recibido en 30 segundos. Cambiando turno automáticamente.
+
+Sesión de chat finalizada entre johan y juan en partida 1.
+
+Cliente 3 autenticado como jose en partida 1. (Turno: 1)
+
+Cliente 3 en espera para partida 1.
+
+Cliente 4 autenticado como luis en partida 2. (Turno: 1)
+
+Cliente 4 en espera para partida 2.
+
+Cliente 5 autenticado como ana en partida 2. (Turno: 0)
+
+Sesión creada entre Cliente 4 (luis) y Cliente 5 (ana) en partida 2.
+
+Enviando a luis: LOGGED|2|Ok|1|1,2,P;1,3,P;1,4,P;1,5,P;1,6,P;
+
+Iniciando sesión de chat entre luis y ana en partida 2...
+
+luis envía: ATTACK|2|5,8
+
+RESULT|2|NOHIT|0
+UPDATE|2|NOHIT|5,8|1
+Sesión de chat finalizada entre luis y ana en partida 2.
+
