@@ -2,7 +2,6 @@
 #define UTILS_H
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include <netinet/in.h> 
 #include "protocol.h"
@@ -34,17 +33,17 @@ void add_room(rooms **list, rooms *room);
 rooms* search_room(rooms **list, int game_id, bool remove);
 
 //Inicialización del socket del servidor
-int setup_server_socket(FILE *log_file);
+int setup_server_socket();
 
 // Manejo de la conexión de un cliente
 void handle_client_connection(int client_sock, int client_id, struct sockaddr_in cli_addr,
-                              waiting_client_t **waiting_list, rooms **rooms_list, FILE *log_file);
+                              waiting_client_t **waiting_list, rooms **rooms_list);
 
 // Enviar ACK al cliente
-void send_login_ack(int client_sock, ProtocolMessage *ackMsg, FILE *log_file);
+void send_login_ack(int client_sock, ProtocolMessage *ackMsg);
 
 // Crear una nueva sesión entre dos clientes
 void create_session(waiting_client_t *waiting, int client_sock, int client_id, int game_id,
-                    const char *username, rooms **rooms_list, FILE *log_file);
+                    const char *username, rooms **rooms_list);
 
 #endif 
