@@ -5,12 +5,37 @@
 #include <stddef.h>
 
 const char* message_type_to_string(MessageType type) {
+    const char* MessageTypeStr[] = {
+        "LOGIN",
+        "LOGGED",
+        "ATTACK",
+        "RESULT",
+        "UPDATE",
+        "GAME_END",
+        "ERROR",
+        "INVALID",
+        "TIMEOUT"
+        // "GAME_START"  // Opcional.
+    };
     if (type >= 0 && type < (int)(sizeof(MessageTypeStr)/sizeof(MessageTypeStr[0])))
         return MessageTypeStr[type];
     return "INVALID";
 }
 
 MessageType string_to_message_type(const char* str) {
+    const char* MessageTypeStr[] = {
+        "LOGIN",
+        "LOGGED",
+        "ATTACK",
+        "RESULT",
+        "UPDATE",
+        "GAME_END",
+        "ERROR",
+        "INVALID",
+        "TIMEOUT"
+        // "GAME_START"  // Opcional.
+    };
+
     for (int i = 0; i < (int)(sizeof(MessageTypeStr)/sizeof(MessageTypeStr[0])); i++) {
         if (strcmp(str, MessageTypeStr[i]) == 0)
             return (MessageType)i;
