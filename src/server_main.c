@@ -11,14 +11,21 @@
 #define MAX 1024
 
 int main() {
+
+    fclose(fopen("server.log", "w")); 
+
+    FILE *log_file = fopen("server.log", "a");
+
     // Crear el socket de escucha.
-    int sockfd = setup_server_socket();
+    int sockfd = setup_server_socket(log_file);
 
     struct sockaddr_in cli_addr;
     socklen_t cli_len = sizeof(cli_addr);
     int client_counter = 0;
     waiting_client_t *waiting_list = NULL;
     rooms *rooms_list = NULL;
+    
+
 
     while (1) {
         int client_sock = accept(sockfd, (struct sockaddr*)&cli_addr, &cli_len);
@@ -27,8 +34,10 @@ int main() {
             continue;
         }
         int client_id = ++client_counter;
-        handle_client_connection(client_sock, client_id, cli_addr, &waiting_list, &rooms_list);
+        handle_client_connection(client_sock, client_id, cli_addr, &waiting_list, &rooms_list, log_file);
     }
+
+    fclose(log_file); 
 
     close(sockfd);
     return 0;

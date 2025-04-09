@@ -12,8 +12,8 @@
 
 
 //Función para procesar mensajes de usuarios
-void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg, int* end){
-    
+void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const char* username1, const char* username2,  ProtocolMessage msg, int* end, FILE *log_file){
+        char message[1500];
         // Se espera que msg.data contenga dos enteros "x,y"
         int x, y;
         *end = 0;
@@ -38,6 +38,10 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
                 responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                 format_message(responseMsg, responseStr, MAX);
                 write(sock1, responseStr, strlen(responseStr));
+
+                snprintf(message, sizeof(message), "%s", responseStr);
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
             }
 
             if (decision == 2) { // Ataque válido
@@ -47,6 +51,9 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
                 responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                 format_message(responseMsg, responseStr, MAX);
                 write(sock1, responseStr, strlen(responseStr));
+                snprintf(message, sizeof(message), "%s", responseStr);
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
                         
                 // Enviar UPDATE al defensor.
                 responseMsg.type = MSG_UPDATE;
@@ -54,6 +61,9 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
                 responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                 format_message(responseMsg, responseStr, MAX);
                 write(sock2, responseStr, strlen(responseStr));
+                snprintf(message, sizeof(message), "%s", responseStr);
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
             }
 
             if (decision == 3) { // Ataque decisivo (fin del juego)
@@ -63,12 +73,18 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
                 responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                 format_message(responseMsg, responseStr, MAX);
                 write(sock1, responseStr, strlen(responseStr));
+                snprintf(message, sizeof(message), "%s", responseStr);
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
                         
                 responseMsg.type = MSG_END;
                 strncpy(responseMsg.data, enemyResp, sizeof(responseMsg.data)-1);
                 responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                 format_message(responseMsg, responseStr, MAX);
                 write(sock2, responseStr, strlen(responseStr));
+                snprintf(message, sizeof(message), "%s", responseStr);
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
                 *end = 1;
             }
         }
@@ -76,7 +92,9 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
 
 // Función de manejo de sesión: recibe mensajes de ambos clientes y, si se trata de un ataque, llama al game_manager.
 void *session_handler(void *arg) {
+    char message[1500];
     session_pair_t *session = (session_pair_t *)arg;
+    FILE *log_file = session->log_file;
     int sock1 = session->client_sock1; int sock2 = session->client_sock2;
     int game_id = session->game_id;
     char username1[50]; char username2[50];
@@ -96,7 +114,6 @@ void *session_handler(void *arg) {
     ackMsg.game_id = game_id;
     int turn1; int turn2;
     char initial_info1[100]; char initial_info2[100];
-    char temp_data1[150]; char temp_data2[150];
     char buf[MAX];
 
     game_manager_process_login(gm, game_id, username1, initial_info1, sizeof(initial_info1), &turn1);
@@ -104,15 +121,20 @@ void *session_handler(void *arg) {
     snprintf(buf,sizeof(buf),"Ok|%d|%s",turn1,initial_info1);
     strncpy(ackMsg.data,buf,sizeof(ackMsg.data)-1); ackMsg.data[sizeof(ackMsg.data)-1]=0;
     format_message(ackMsg,buf,MAX); write(sock1,buf,strlen(buf));
-    printf("Enviando a %s: %s\n",username1,buf);
+    snprintf(message, sizeof(message), "Enviando a %s: %s\n",username1,buf);
+    fprintf(log_file, "%s\n", message);
+    fflush(log_file);
+    printf("%s", message);
 
     game_manager_process_login(gm, game_id, username2, initial_info2, sizeof(initial_info2), &turn2);
     turn2 = 0;
     snprintf(buf,sizeof(buf),"Ok|%d|%s",turn2,initial_info2);
     strncpy(ackMsg.data,buf,sizeof(ackMsg.data)-1); ackMsg.data[sizeof(ackMsg.data)-1]=0;
     format_message(ackMsg,buf,MAX); write(sock2,buf,strlen(buf));
-
-    printf("Iniciando sesión de chat entre %s y %s en partida %d...\n", username1, username2, game_id);
+    snprintf(message, sizeof(message), "Iniciando sesión de chat entre %s y %s en partida %d...\n", username1, username2, game_id);
+    fprintf(log_file, "%s\n", message);
+    fflush(log_file);
+    printf("%s", message);
     
     // Bucle principal de la sesión.
     while (1) {
@@ -132,7 +154,10 @@ void *session_handler(void *arg) {
         
         if (activity < 0) { perror("select error"); break; }
         if (activity == 0) {
-            printf("Timeout: ningún mensaje recibido en 30 segundos. Cambiando turno automáticamente.\n");
+            snprintf(message, sizeof(message), "Timeout: ningún mensaje recibido en 30 segundos. Cambiando turno automáticamente.\n");
+            fprintf(log_file, "%s\n", message);
+            fflush(log_file);
+            printf("%s", message);
 
             char attackerResp[10], enemyResp[10];
             snprintf(attackerResp, sizeof(attackerResp), "-1");
@@ -155,11 +180,14 @@ void *session_handler(void *arg) {
             memset(buff, 0, MAX);
             n = read(sock1, buff, MAX);
             if (n <= 0) { printf("%s desconectado.\n", username1); break; }
-            printf("%s envía: %s", username1, buff);
+            snprintf(message, sizeof(message), "%s envía: %s", username1, buff);
+            fprintf(log_file, "%s\n", message);
+            fflush(log_file);
+            printf("%s", message);
             
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                process_messages(gm, sock1, sock2, game_id, username1, username2, msg, &end);   
+                process_messages(gm, sock1, sock2, game_id, username1, username2, msg, &end, log_file);   
                 if(end==1){
                     
                     search_room(rooms_list, game_id, true);
@@ -175,11 +203,14 @@ void *session_handler(void *arg) {
             memset(buff, 0, MAX);
             n = read(sock2, buff, MAX);
             if (n <= 0) { printf("%s desconectado.\n", username2); break; }
-            printf("%s envía: %s", username2, buff);
+            snprintf(message, sizeof(message), "%s envía: %s", username2, buff);
+            fprintf(log_file, "%s\n", message);
+            fflush(log_file);
+            printf("%s", message);
             
             ProtocolMessage msg;
             if (parse_message(buff, &msg) && msg.type == MSG_ATTACK) {
-                process_messages(gm, sock2, sock1, game_id, username2, username1, msg, &end);
+                process_messages(gm, sock2, sock1, game_id, username2, username1, msg, &end, log_file);
                 if(end==1){
                     
                     search_room(rooms_list, game_id, true);
@@ -193,6 +224,10 @@ void *session_handler(void *arg) {
     
     close(sock1);
     close(sock2);
-    printf("Sesión de chat finalizada entre %s y %s en partida %d.\n", username1, username2, game_id);
+    snprintf(message, sizeof(message), "Sesión de chat finalizada entre %s y %s en partida %d.\n", username1, username2, game_id);
+    search_room(rooms_list, game_id, true);   
+    fprintf(log_file, "%s\n", message);
+    fflush(log_file);
+    printf("%s", message);
     return NULL;
 }
