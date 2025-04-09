@@ -18,7 +18,7 @@ typedef enum {
 } MessageType;
 
 // Mapeo de strings para cada tipo.
-/*static const char* MessageTypeStr[] = {
+static const char* MessageTypeStr[] = {
     "LOGIN",
     "LOGGED",
     "ATTACK",
@@ -29,7 +29,7 @@ typedef enum {
     "INVALID",
     "TIMEOUT"
     // "GAME_START"  // Opcional.
-};*/
+};
 
 // Estructura para representar un mensaje.
 typedef struct {
