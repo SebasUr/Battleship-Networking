@@ -4,29 +4,25 @@ Socket enlazado a puerto 8080.
 
 Server escuchando...
 
-Cliente 1 autenticado como seb en partida 1. (Turno: 1)
+Cliente 1 autenticado como johan en partida 1. (Turno: 1)
 
 Cliente 1 en espera para partida 1.
 
-Cliente 2 autenticado como gg en partida 1. (Turno: 0)
+Cliente 2 autenticado como juan en partida 1. (Turno: 0)
 
-Sesión creada entre Cliente 1 (seb) y Cliente 2 (gg) en partida 1.
+Sesión creada entre Cliente 1 (johan) y Cliente 2 (juan) en partida 1.
 
-Enviando a seb: LOGGED|1|Ok|1|5,3,P;5,4,P;5,5,P;5,6,P;5,7,P;
+Enviando a johan: LOGGED|1|Ok|1|5,3,P;5,4,P;5,5,P;5,6,P;5,7,P;
 
-Iniciando sesión de chat entre seb y gg en partida 1...
+Iniciando sesión de chat entre johan y juan en partida 1...
 
-seb envía: ATTACK|1|4,2
-
-RESULT|1|NOHIT|0
-UPDATE|1|NOHIT|4,2|1
-gg envía: ATTACK|1|3,2
+johan envía: ATTACK|1|0,0
 
 RESULT|1|NOHIT|0
-UPDATE|1|NOHIT|3,2|1
-seb envía: FF|1|username
+UPDATE|1|NOHIT|0,0|1
+juan envía: FF|1|
 
-seb Se rinde ante gg
-seb Se rinde ante gg
-Sesión de chat finalizada entre seb y gg en partida 1.
+juan Se rinde ante johan
+GAME_END|1|johan|
+Sesión de chat finalizada entre johan y juan en partida 1.
 

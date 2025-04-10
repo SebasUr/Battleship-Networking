@@ -203,11 +203,10 @@ void *session_handler(void *arg) {
                 format_message(responseMsg, responseStr, MAX);
 
                 snprintf(message, sizeof(message), "%s Se rinde ante %s", username1, username2);
-
-                write(sock1, responseStr, strlen(responseStr));
                 fprintf(log_file, "%s\n", message);
                 fflush(log_file);
-                        
+                
+
                 write(sock2, responseStr, strlen(responseStr));
                 fprintf(log_file, "%s\n", message);
                 fflush(log_file);
@@ -242,18 +241,18 @@ void *session_handler(void *arg) {
                 char responseStr[MAX];
 
                 responseMsg.type = MSG_END; responseMsg.game_id = game_id;
-                char winner[MAX]; snprintf(winner, sizeof(winner), "%s|", username2);
+                char winner[MAX]; snprintf(winner, sizeof(winner), "%s|", username1);
                 strncpy(responseMsg.data, winner, sizeof(responseMsg.data)-1); responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
                 format_message(responseMsg, responseStr, MAX);
 
                 snprintf(message, sizeof(message), "%s Se rinde ante %s", username2, username1);
-
+                
                 write(sock1, responseStr, strlen(responseStr));
-                fprintf(log_file, "%s\n", message);
-                fflush(log_file);
-                        
                 write(sock2, responseStr, strlen(responseStr));
                 fprintf(log_file, "%s\n", message);
+                fflush(log_file);
+
+                fprintf(log_file, "%s\n", responseStr);
                 fflush(log_file);
                 
                 end = 1;
