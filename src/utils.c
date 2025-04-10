@@ -8,7 +8,7 @@
 #include "session_handler.h"
 #include "protocol.h"
 #include "game_manager.h"
-#include "Utils.h"
+#include "utils.h"
 
 #define PORT 8080
 #define MAX 1024

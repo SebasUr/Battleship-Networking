@@ -14,7 +14,8 @@ typedef enum {
     MSG_END,     // Fin de partida.
     MSG_ERROR,   // Mensaje de error.
     MSG_INVALID, // Tipo inválido.
-    MSG_TIMEOUT    // (Opcional)
+    MSG_TIMEOUT,   // Timeout de turno
+    MSG_FF
 } MessageType;
 
 

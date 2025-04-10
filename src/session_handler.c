@@ -6,7 +6,7 @@
 #include "session_handler.h"
 #include "protocol.h"
 #include "game_manager.h"
-#include "Utils.h"
+#include "utils.h"
 
 #define MAX 1024
 
@@ -193,6 +193,27 @@ void *session_handler(void *arg) {
                     search_room(rooms_list, game_id, true);
                     break;
                 }
+            } else if(parse_message(buff, &msg) && msg.type == MSG_FF) {
+                ProtocolMessage responseMsg;
+                char responseStr[MAX];
+
+                responseMsg.type = MSG_END; responseMsg.game_id = game_id;
+                char winner[MAX]; snprintf(winner, sizeof(winner), "%s|", username2);
+                strncpy(responseMsg.data, winner, sizeof(responseMsg.data)-1); responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
+                format_message(responseMsg, responseStr, MAX);
+
+                snprintf(message, sizeof(message), "%s Se rinde ante %s", username1, username2);
+
+                write(sock1, responseStr, strlen(responseStr));
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
+                        
+                write(sock2, responseStr, strlen(responseStr));
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
+
+                end = 1;
+                search_room(rooms_list, game_id, true);
             } else{
                 write(sock2, buff, n);
             } 
@@ -216,6 +237,27 @@ void *session_handler(void *arg) {
                     search_room(rooms_list, game_id, true);
                     break;
                 }
+            } else if(parse_message(buff, &msg) && msg.type == MSG_FF) {
+                ProtocolMessage responseMsg;
+                char responseStr[MAX];
+
+                responseMsg.type = MSG_END; responseMsg.game_id = game_id;
+                char winner[MAX]; snprintf(winner, sizeof(winner), "%s|", username2);
+                strncpy(responseMsg.data, winner, sizeof(responseMsg.data)-1); responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
+                format_message(responseMsg, responseStr, MAX);
+
+                snprintf(message, sizeof(message), "%s Se rinde ante %s", username2, username1);
+
+                write(sock1, responseStr, strlen(responseStr));
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
+                        
+                write(sock2, responseStr, strlen(responseStr));
+                fprintf(log_file, "%s\n", message);
+                fflush(log_file);
+                
+                end = 1;
+                search_room(rooms_list, game_id, true);
             } else{
                 write(sock1, buff, n);
             } 

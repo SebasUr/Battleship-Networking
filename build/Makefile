@@ -12,7 +12,7 @@ SERVER_SRCS = $(SRC_DIR)/server_main.c \
               $(SRC_DIR)/protocol.c \
               $(SRC_DIR)/session_handler.c \
               $(SRC_DIR)/game_manager.c \
-              $(SRC_DIR)/Utils.c   
+              $(SRC_DIR)/utils.c   
 
 # Archivos fuente para el cliente (solo si el cliente también usa funciones de utils.c)
 CLIENT_SRCS = $(SRC_DIR)/client.c \

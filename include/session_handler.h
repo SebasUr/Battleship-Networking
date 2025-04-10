@@ -2,7 +2,7 @@
 #define SESSION_HANDLER_H
 #include "protocol.h"
 #include "game_manager.h"
-#include "Utils.h"
+#include "utils.h"
 #include <stdio.h>
 
 typedef struct {
