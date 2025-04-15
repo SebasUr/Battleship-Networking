@@ -21,6 +21,9 @@ typedef struct room {
     struct room *next;
 } rooms;
 
+// Función para obtener la fecha y hora actual como cadena.
+const char* get_timestamp();
+
 // Función auxiliar para agregar un cliente a la lista de espera.
 void add_waiting_client(waiting_client_t **list, waiting_client_t *client);
 

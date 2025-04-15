@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +6,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <sys/select.h>
+#include <time.h>
 #include "session_handler.h"
 #include "protocol.h"
 #include "game_manager.h"
@@ -12,6 +14,14 @@
 
 #define PORT 8080
 #define MAX 1024
+
+const char* get_timestamp() {
+    static char buffer[20];
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", t);
+    return buffer;
+}
 
 // Función auxiliar para agregar un cliente a la lista de espera.
 void add_waiting_client(waiting_client_t **list, waiting_client_t *client) {
