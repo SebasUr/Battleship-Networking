@@ -1,7 +1,6 @@
 import socket
 import threading
 from datetime import datetime
-
 MAX = 1024
 PORT = 8080
 SERVER_IP = "127.0.0.1"
@@ -25,6 +24,7 @@ def log_transaction(query, response_id, client_id, server_response):
     with open("transaction_log.txt", "a") as log_file:
         log_file.write(log_message + "\n")
 
+        
 def fill_board_from_logged_message(message):
     global MY_BOARD
     parts = message.split('|')
@@ -83,6 +83,7 @@ def print_boards_side_by_side(b1, title1, b2, title2):
     print()
 
 
+
 def set_last_attack_coords(r, c):
     global last_attack_coords
     last_attack_coords = (r, c)
@@ -113,6 +114,10 @@ def update_board(message):
         if len(parts) >= 3:
             r, c = get_last_attack_coords()
             ENEMY_BOARD[r][c] = 3 if parts[2] == "HIT" else 2
+            if parts[2] == "HIT":
+                print(f"\n¡Has impactado en ({r},{c})!")
+            else:
+                print(f"\nTu ataque a ({r},{c}) fue al AGUA.")
     elif message.startswith("UPDATE"):
         parts = message.split('|')
         if len(parts) >= 5:
@@ -139,15 +144,15 @@ def update_turn(message, sock, match_id):
         print("\n⏰ TIMEOUT recibido. Se invierte el turno.")
         if my_turn:
             print("➡️  Ahora SÍ es tu turno (el oponente se quedó sin tiempo).")
-        else:
-            print("⛔ Ahora NO es tu turno (se te acabó el tiempo).")
-        if my_turn:
             print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
+        else:
+            print("⛔ Ahora NO es tu turno (se te acabó el tiempo).  \n\n", end='', flush=True)
         return
 
     # LOGGED
     if message.startswith("LOGGED"):
         fill_board_from_logged_message(message)
+        log_transaction(message, sock.getpeername()[0], socket.gethostbyname(socket.gethostname()), " - SERVER")
         parts = message.split('|')
         if len(parts) >= 4:
             try:
@@ -183,13 +188,15 @@ def update_turn(message, sock, match_id):
             except ValueError:
                 my_turn = False
             if my_turn:
-                print("\n¡ES TU TURNO!")
-                print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
+                print("\n¡ES TU TURNO!\n:", end='', flush=True)
+                #print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
+#                print("Ingresa coordenadas (fila,columna): ", end='', flush=True) 
 
 
 def read_msg(sock, match_id):
     global exit_flag
     client_ip = socket.gethostbyname(socket.gethostname())
+
     while not exit_flag:
         try:
             buff = sock.recv(MAX).decode()
@@ -200,21 +207,18 @@ def read_msg(sock, match_id):
 
             if DEBUG:
                 print(f"[DEBUG] Recibido: {buff}")
-                # Registrar la transacción de la respuesta del servidor
-                response_ip = sock.getpeername()[0]
-                log_transaction(buff, response_ip, client_ip, buff)  # Registramos el mensaje recibido
 
-                # Continuar con el procesamiento del mensaje
-                interpret_message(buff)
-                update_board(buff)
-                update_turn(buff, sock, match_id)
-
+            response_ip = sock.getpeername()[0]
+            log_transaction(buff, response_ip, client_ip, " - SERVER") 
             # GAME_END
             if buff.startswith("GAME_END"):
                 parts = buff.split('|')
                 if len(parts) >= 4:
                     winner = parts[3]
-                    print(f"\n🎉 Juego terminado. Ganador: {winner}")
+                    if parts[2] == "FF":
+                        print(f"\n🎉 Juego terminado por rendición. Ganador: {winner}")
+                    else:
+                        print(f"\n🎉 Juego terminado. Ganador: {winner}")
                 exit_flag = True
                 sock.close()
                 break
@@ -223,7 +227,7 @@ def read_msg(sock, match_id):
             update_board(buff)
             update_turn(buff, sock, match_id)
 
-            if buff.startswith("FF"):
+            if buff.startswith("exit"):
                 print("El otro usuario cerró sesión.")
                 exit_flag = True
         except Exception as e:
@@ -233,116 +237,94 @@ def read_msg(sock, match_id):
 
 def handle_input(sock, match_id):
     global exit_flag, my_turn
-
     while not exit_flag:
         if my_turn:
-            coords = input("Ingresa coordenadas (fila,columna), o 'FF' para finalizar: ").strip()
-
-            # Si el jugador ingresa 'FF', cerramos la sesión y volvemos a pedir el ID de la sesión
-            if coords == 'FF':
-                print("Sesión terminada. Volviendo a pedir el ID de la sesión...")
-                exit_flag = True  # Marca para terminar la sesión actual
-                sock.sendall(f"EXIT|{match_id}".encode())  # Enviar comando de salida al servidor
-                
-                # Verificar si el socket está abierto antes de intentar registrar la transacción
-                if sock.fileno() != -1:  # El socket está abierto si fileno() no es -1
-                    response_ip = sock.getpeername()[0]
-                else:
-                    response_ip = "No response"
-
-                log_transaction(f"EXIT|{match_id}", response_ip, socket.gethostbyname(socket.gethostname()), "No response")
-                return  # Termina la ejecución de esta función
-
+            print("\nIngresa coordenadas (fila,columna): ", end='', flush=True)
+            coords = input("").strip()
             if not my_turn:
                 print("🚫 Ya no es tu turno, no se envía ataque.")
                 continue
             try:
-                r, c = map(int, coords.split(','))
-                if 0 <= r < 10 and 0 <= c < 10:
-                    set_last_attack_coords(r, c)
-                    query = f"ATTACK|{match_id}|{r},{c}"  # Define la consulta enviada
-                    sock.sendall(query.encode())  # Enviar la consulta al servidor
-                    my_turn = False
-
-                    # Esperar la respuesta del servidor
-                    server_response = sock.recv(MAX).decode()
-
-                    # Obtener la IP del servidor
-                    response_ip = sock.getpeername()[0]
-
-                    # Registrar la transacción
-                    log_transaction(query, response_ip, socket.gethostbyname(socket.gethostname()), server_response)
+                if str(coords) == "FF":
+                    print("Riendiendote...")
+                    sock.sendall(f"FF|{match_id}".encode())
+                    log_transaction(f"FF|{match_id}", sock.getpeername()[0], socket.gethostbyname(socket.gethostname()), f" - CLIENT")
                 else:
-                    print("Error: coordenadas entre 0 y 9.")
+                    r, c = map(int, coords.split(','))
+                    if 0 <= r < 10 and 0 <= c < 10:
+                        set_last_attack_coords(r, c)
+                        sock.sendall(f"ATTACK|{match_id}|{r},{c}".encode())
+                        print(f"Enviando ataque a ({r},{c})...")
+                        log_transaction(f"ATTACK|{match_id}|{r},{c}", sock.getpeername()[0], socket.gethostbyname(socket.gethostname()), f" - CLIENT")
+                        my_turn = False
+                    else:
+                        print("Error: coordenadas entre 0 y 9.")
             except ValueError:
                 print("Formato incorrecto. Usa 'fila,columna' (ej: 6,2).")
         else:
             threading.Event().wait(0.1)
 
 
-
 def main():
     global exit_flag
 
-    while True:  # Permitir la reconexión si un jugador termina la sesión
-        username = input("Username: ").strip()
-        if not username:
-            print("Username vacío.")
+    username = input("Username: ").strip()
+    if not username:
+        print("Username vacío.")
+        return
+
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((SERVER_IP, PORT))
+            print("Conectado al servidor.")
+        except Exception as e:
+            print(f"Error de conexión: {e}")
             return
 
-        while True:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect((SERVER_IP, PORT))
-                print("Conectado al servidor.")
-            except Exception as e:
-                print(f"Error de conexión: {e}")
-                return
-
-            game_id_input = input("ID de partida: ").strip()
-            try:
-                game_id = int(game_id_input)
-            except ValueError:
-                print("ID inválido.")
-                sock.close()
-                continue
-
-            print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
-            sock.sendall(f"LOGIN|{game_id}|{username}".encode())
-            try:
-                buff = sock.recv(MAX).decode()
-                if not buff:
-                    print("No llegó respuesta del login.")
-                    sock.close()
-                    return
-                if DEBUG:
-                    print(f"[DEBUG] Recibido (login): {buff}")
-            except Exception as e:
-                print(f"Error al recibir login: {e}")
-                sock.close()
-                return
-
-            parts = buff.split('|')
-            if parts[0] == "LOGGED" and len(parts) >= 3 and parts[2].upper() == "NO":
-                print("Sala ocupada, ingresa otro ID de partida.")
-                sock.close()
-                continue
-
-            update_turn(buff, sock, game_id)
-            break
-
-        threading.Thread(target=read_msg, args=(sock, game_id), daemon=True).start()
-        threading.Thread(target=handle_input, args=(sock, game_id), daemon=True).start()
-
+        game_id_input = input("ID de partida: ").strip()
         try:
-            while not exit_flag:
-                threading.Event().wait(1)
-        except KeyboardInterrupt:
-            exit_flag = True
-        finally:
+            game_id = int(game_id_input)
+        except ValueError:
+            print("ID inválido.")
             sock.close()
-            print("Cliente cerrado.")
+            continue
 
+        print_boards_side_by_side(MY_BOARD, "MI TABLERO", ENEMY_BOARD, "TABLERO ENEMIGO")
+        sock.sendall(f"LOGIN|{game_id}|{username}".encode())
+        try:
+            buff = sock.recv(MAX).decode()
+            if not buff:
+                print("No llegó respuesta del login.")
+                sock.close()
+                return
+            if DEBUG:
+                print(f"[DEBUG] Recibido (login): {buff}")
+        except Exception as e:
+            print(f"Error al recibir login: {e}")
+            sock.close()
+            return
+
+        parts = buff.split('|')
+        if parts[0] == "LOGGED" and len(parts) >= 3 and parts[2].upper() == "NO":
+            print("Sala ocupada, ingresa otro ID de partida.")
+            sock.close()
+            continue
+
+        update_turn(buff, sock, game_id)
+        break
+
+    threading.Thread(target=read_msg, args=(sock, game_id), daemon=True).start()
+    threading.Thread(target=handle_input, args=(sock, game_id), daemon=True).start()
+
+    try:
+        while not exit_flag:
+            threading.Event().wait(1)
+    except KeyboardInterrupt:
+        exit_flag = True
+    finally:
+        sock.close()
+        print("Cliente cerrado.")
 
 
 if __name__ == "__main__":
