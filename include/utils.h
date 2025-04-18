@@ -37,7 +37,7 @@ void add_room(rooms **list, rooms *room);
 rooms* search_room(rooms **list, int game_id, bool remove);
 
 //Inicialización del socket del servidor
-int setup_server_socket(FILE *log_file);
+int  setup_server_socket(const char *bind_ip, int bind_port, FILE *log_file);
 
 // Manejo de la conexión de un cliente
 void handle_client_connection(int client_sock, int client_id, struct sockaddr_in cli_addr,

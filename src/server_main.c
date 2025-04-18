@@ -7,18 +7,30 @@
 #include <arpa/inet.h>  
 #include "utils.h"
 
-
-#define PORT 8080
+#define DEFAULT_PORT    8080
+#define DEFAULT_LOG     "server.log"
+#define DEFAULT_IP      "0.0.0.0"
 #define MAX 1024
 
-int main() {
+int main(int argc, char *argv[]) {
+    const char *bind_ip   = DEFAULT_IP;
+    int         bind_port = DEFAULT_PORT;
+    const char *log_path  = DEFAULT_LOG;
 
-    fclose(fopen("server.log", "w")); 
+    // Leer argumentos
+    if (argc > 1) bind_ip = argv[1]; 
+    if (argc > 2) bind_port = atoi(argv[2]); 
+    if (argc > 3) log_path = argv[3];
 
-    FILE *log_file = fopen("server.log", "a");
+    fclose(fopen(log_path, "w")); 
+    FILE *log_file = fopen(log_path, "a");
+    if (!log_file) {
+        perror("No se pudo abrir log_file");
+        exit(EXIT_FAILURE);
+    }
 
     // Crear el socket de escucha.
-    int sockfd = setup_server_socket(log_file);
+    int sockfd = setup_server_socket(bind_ip, bind_port, log_file);
 
     struct sockaddr_in cli_addr;
     socklen_t cli_len = sizeof(cli_addr);
@@ -37,7 +49,6 @@ int main() {
     }
 
     fclose(log_file); 
-
     close(sockfd);
     return 0;
 }

@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <sys/select.h>
 #include <time.h>
+#include <arpa/inet.h>
 #include "session_handler.h"
 #include "protocol.h"
 #include "game_manager.h"
@@ -75,7 +76,7 @@ rooms* search_room(rooms **list, int game_id, bool remove) {
 }
 
 // Inicialización del socket del servidor
-int setup_server_socket(FILE *log_file) {
+int setup_server_socket(const char *bind_ip, int bind_port, FILE *log_file) {
     char message[MAX];
     int sockfd;
     struct sockaddr_in serv_addr;
@@ -95,8 +96,8 @@ int setup_server_socket(FILE *log_file) {
 
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(PORT);
+    inet_pton(AF_INET, bind_ip, &serv_addr.sin_addr);
+    serv_addr.sin_port = htons(bind_port);
 
     if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
         snprintf(message, sizeof(message), "Error en bind");
@@ -106,7 +107,7 @@ int setup_server_socket(FILE *log_file) {
         exit(EXIT_FAILURE);
     }
 
-    snprintf(message, sizeof(message), "Socket enlazado a puerto %d.\n", PORT);
+    snprintf(message, sizeof(message), "Socket enlazado a puerto %d.\n", bind_port);
     fprintf(log_file, "%s\n", message);
     fflush(log_file);
     printf("%s", message);
