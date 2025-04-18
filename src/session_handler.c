@@ -55,10 +55,6 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
             strncpy(responseMsg.data, enemyResp, sizeof(responseMsg.data)-1);
             responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
             format_message(responseMsg, responseStr, MAX);
-            //write(sock2, responseStr, strlen(responseStr));
-            //fprintf(log_file, "%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
-            //fflush(log_file);
-            //printf("%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
 
             int retries = 0;
             while (retries < 2) { 
