@@ -55,10 +55,38 @@ void process_messages(GameManager *gm, int sock1, int sock2, int game_id, const 
             strncpy(responseMsg.data, enemyResp, sizeof(responseMsg.data)-1);
             responseMsg.data[sizeof(responseMsg.data)-1] = '\0';
             format_message(responseMsg, responseStr, MAX);
-            write(sock2, responseStr, strlen(responseStr));
-            fprintf(log_file, "%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
-            fflush(log_file);
-            printf("%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
+            //write(sock2, responseStr, strlen(responseStr));
+            //fprintf(log_file, "%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
+            //fflush(log_file);
+            //printf("%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
+
+            int retries = 0;
+            while (retries < 2) { 
+                write(sock2, responseStr, strlen(responseStr));
+                fprintf(log_file, "%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
+                printf("%s \"%s\" - SERVER\n", get_timestamp(), responseStr);
+                fflush(log_file);
+    
+                fd_set rfds;
+                FD_ZERO(&rfds);
+                FD_SET(sock2, &rfds);
+                struct timeval tmo = { .tv_sec = 3, .tv_usec = 0 };
+                int sel = select(sock2 + 1, &rfds, NULL, NULL, &tmo);
+                if (sel > 0 && FD_ISSET(sock2, &rfds)) {
+                    char ackbuf[MAX];
+                    int len = read(sock2, ackbuf, sizeof(ackbuf));
+                    if (len > 0) {
+                        ProtocolMessage ackmsg;
+                        if (parse_message(ackbuf, &ackmsg) && ackmsg.type == MSG_ACK && ackmsg.game_id == game_id && strcmp(ackmsg.data, "1") == 0){
+                            fprintf(log_file, "%s \"ACK RECEIVED/ UPDATE SUCCESSFUL \" - %s\n", get_timestamp(), username2);
+                            printf(   "%s \"ACK RECEIVED/ UPDATE SUCCESSFUL\" - %s\n", get_timestamp(), username2);
+                            fflush(log_file);
+                            break;
+                        }
+                    }
+                }
+                retries++;
+            }
         }
 
         if (decision == 3) { // Ataque decisivo (fin del juego)
@@ -148,9 +176,9 @@ void *session_handler(void *arg) {
         int activity = select(max_sd + 1, &readfds, NULL, NULL, &timeout);
         if (activity < 0) { perror("select error"); break; }
         if (activity == 0) {
-            fprintf(log_file, "%s \"Timeout: ningún mensaje recibido en 30 segundos. Cambiando turno automáticamente.\" - SERVER\n", get_timestamp());
+            fprintf(log_file, "%s \"TIMEOUT: CAMBIANDO TURNOS.\" - SERVER\n", get_timestamp());
             fflush(log_file);
-            printf("%s \"Timeout: ningún mensaje recibido en 30 segundos. Cambiando turno automáticamente.\" - SERVER\n", get_timestamp());
+            printf("%s \"TIMEOUT: CAMBIANDO TURNOS.\" - SERVER\n", get_timestamp());
 
             ProtocolMessage responseMsg;
             char responseStr[MAX];

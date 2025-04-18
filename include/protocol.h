@@ -15,7 +15,8 @@ typedef enum {
     MSG_ERROR,   // Mensaje de error.
     MSG_INVALID, // Tipo inválido.
     MSG_TIMEOUT,   // Timeout de turno
-    MSG_FF
+    MSG_FF,
+    MSG_ACK,     // ACK
 } MessageType;
 
 
