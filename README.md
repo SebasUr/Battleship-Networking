@@ -27,7 +27,9 @@ client/
 1. Clona este repositorio:
    ```bash
    git clone <URL_DEL_REPOSITORIO>
-   cd Battleship-Networking/client
+   git fetch --all
+   git checkout client
+   cd Battleship-Networking
    ```
 
 ## Configuración
