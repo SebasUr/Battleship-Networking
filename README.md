@@ -1,5 +1,3 @@
-# Documentación
-
 # Estructura del proyecto y ejecución
 
 El proyecto está dividido en dos ramas principales
@@ -73,6 +71,7 @@ El planteamiento que utilizamos, de manera simplificada, es el siguiente:
 
 - El servidor (server_main.c) hace bind a los sockets y empieza a escuchar las conexiones, va aceptando los clientes.
 - Una vez llegados los clientes, empareja clientes respecto al número de la sesión, allí crea una sesión para ambos, y asigna esta sesión a un hilo. (session_handler.c)
+- Hay funciones que manejan estructuras de datos para establecer y liberar las ID de las diferentes sesiones conforme se conectan y se ponen en espera los diferentes clientes
 - Luego dentro de cada hilo (sesión) usamos `select()` sobre un fd_set que contiene ambos sockets, para multiplexar I/O sobre los dos sockets. De modo que un solo hilo gestione ambos clientes de forma concurrente, este administrará el intercambio de mensajes entre esos dos clientes (protocol.c) e invocará a la lógica de juego (game_manager.c).
 - Finalmente, se llama a `pthread_detach()` para que el hilo libere sus recursos automáticamente al terminar.
 
