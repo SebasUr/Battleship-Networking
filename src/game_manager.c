@@ -213,7 +213,7 @@ Board generateBoard() {
     //     for (int i = 0; i < numShips; i++) {
 
     // Colocar cada tipo de barco.
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < numShips; i++) {
         for (int j = 0; j < ships[i].quantity; j++) {
             placeShip(&board, ships[i].size, ships[i].symbol);
         }

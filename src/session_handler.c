@@ -128,7 +128,7 @@ void *session_handler(void *arg) {
     ackMsg.type = MSG_LOGGED;
     ackMsg.game_id = game_id;
     int turn1, turn2;
-    char initial_info1[100], initial_info2[100];
+    char initial_info1[200], initial_info2[200];
     char buf[MAX];
 
     // Procesar login para el primer usuario
