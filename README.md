@@ -88,7 +88,7 @@ Battleship-Networking
 
 Arquitectura General
 
-![image.png](image.png)
+![image.png](docs/image.png)
 
 **Arquitectura planteada para nuestro proyecto**
 
