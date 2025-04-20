@@ -109,35 +109,37 @@ La sesión tiene implementado que, si no se reciben respuestas durante 30 segund
 
 **Los mensajes definidos para el protocolo**
 
-Cliente:
+**Cliente**
 
-| Mensaje | DATOS | Dirigido a |
-| --- | --- | --- |
-| LOGIN | |MatchID|username | Server |
-| ATTACK | |MatchID|x,y | Server |
-| FF | |MatchID|username | Server |
-| ACK | |MatchID|1 | Server |
+| Mensaje | DATOS                   | Dirigido a |
+|---------|-------------------------|------------|
+| LOGIN   | \|MatchID\|username     | Server     |
+| ATTACK  | \|MatchID\|x,y          | Server     |
+| FF      | \|MatchID\|username     | Server     |
+| ACK     | \|MatchID\|1            | Server     |
 
-Servidor
+---
 
-| Mensaje | Datos | Dirigido a | Descripción |
-| --- | --- | --- | --- |
-| LOGGED | |MatchID|OK/NO|turn|InitialInfo(board) | Cliente | Se envía la información del tabler |
-| RESULT | |MatchID|HIT/NOHIT|turn=0 | Cliente Atacante | Se envía al atacante para actualizar si dio o falló. |
-| UPDATE | |MatchID|HIT/NOHIT|x,y|turn=1 | Cliente Atacado | Se envía al atacado para actualizar su turno y su estado del tablero. |
-| TIMEOUT | |MatchID|-1 | Ambos Clientes | Se envía cuando pasan 30 segundos. Se cambia el turno |
-| GAME_END | |MatchID|HIT/NOHIT|x,y/FF|winner_username | Ambos Clientes | 
-Se envía a ambos cuando se recibe FF por parte de un atacante. Termina el juego
+**Servidor**
 
- |
+| Mensaje   | Datos                                         | Dirigido a       | Descripción                                                                           |
+|-----------|-----------------------------------------------|------------------|---------------------------------------------------------------------------------------|
+| LOGGED    | \|MatchID\|OK/NO\|turn\|InitialInfo(board)    | Cliente          | Se envía la información del tablero.                                                  |
+| RESULT    | \|MatchID\|HIT/NOHIT\|turn=0                  | Cliente Atacante | Se envía al atacante para actualizar si dio o falló.                                  |
+| UPDATE    | \|MatchID\|HIT/NOHIT\|x,y\|turn=1             | Cliente Atacado  | Se envía al atacado para actualizar su turno y su estado del tablero.                |
+| TIMEOUT   | \|MatchID\|-1                                 | Ambos Clientes   | Se envía cuando pasan 30 segundos. Se cambia el turno.                                |
+| GAME_END  | \|MatchID\|HIT/NOHIT\|x,y/FF\|winner_username | Ambos Clientes   | Se envía a ambos cuando se recibe FF. Termina el juego.                               |
 
-Errores(Servidor)
+---
 
-| Mensaje | Datos | Dirigido a | Descripción |
-| --- | --- | --- | --- |
-| ERROR | |DA|turn=1 | Cliente atacante | Ataque duplicado |
-| ERROR | |OOB|turn=1 | Cliente atacante | Fuera de casillas |
-| ERROR | |NoBoard | Cliente atacante | Debug frente a concurrencia |
+**Errores (Servidor)**
+
+| Mensaje | Datos       | Dirigido a       | Descripción                                |
+|---------|-------------|------------------|--------------------------------------------|
+| ERROR   | DA          | Cliente atacante | Ataque duplicado.                          |
+| ERROR   | OOB         | Cliente atacante | Fuera de casillas.                         |
+| ERROR   | NoBoard     | Cliente atacante | Debug frente a concurrencia (sin tablero). |
+
 
 **Diagrama de secuencia basado en el código.**
 
