@@ -1,5 +1,6 @@
 # Estructura del proyecto y ejecución
 [Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
+[Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
 
 El proyecto está dividido en dos ramas principales
 
@@ -211,6 +212,8 @@ Aspectos a mejorar / no logrados
 
 - Hay ciertos bugs visuales que se dan en el cliente por el manejo de threads en el input_handler.
 - En la interfaz de usuario no hay un contador a tiempo real, sin embargo, se le informa al usuario cuando es su turno que tiene 30 segundos.
+- El juego no persiste cuando hay una desconexión, cualquier desconexión total a pesar de que se maneja y se informa, no se mantiene.
+
 
 ## Conclusiones.
 
