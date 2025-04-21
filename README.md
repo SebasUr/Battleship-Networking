@@ -1,6 +1,5 @@
 # Estructura del proyecto y ejecución
 [Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
-[Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
 
 El proyecto está dividido en dos ramas principales
 
