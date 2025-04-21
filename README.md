@@ -28,7 +28,7 @@ client/
    ```bash
    git clone <URL_DEL_REPOSITORIO>
    git fetch --all
-   git checkout client
+   git switch client
    cd Battleship-Networking
    ```
 

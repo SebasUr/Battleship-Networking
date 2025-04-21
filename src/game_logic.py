@@ -127,7 +127,7 @@ def update_turn(message, sock, match_id, state):
                 state.my_turn = False
         print_boards_side_by_side(state, "MI TABLERO", "TABLERO ENEMIGO")
         if state.my_turn:
-            print("\n¡ES TU TURNO!")
+            print("\n¡ES TU TURNO! (Tienes 30 segundos para atacar)")
         return
 
     if message.startswith("ERROR"):
@@ -150,6 +150,6 @@ def update_turn(message, sock, match_id, state):
             except ValueError:
                 state.my_turn = False
             if state.my_turn:
-                print("\n¡ES TU TURNO! \n:", end='', flush=True)
+                print("\n¡ES TU TURNO! (Tienes 30 segundos para atacar) \n:", end='', flush=True)
                 #print_boards_side_by_side(state, "MI TABLERO", "TABLERO ENEMIGO")
         return
