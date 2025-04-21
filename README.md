@@ -49,7 +49,7 @@ Puedes editar estos valores antes de ejecutar el cliente.
 
 ## Ejecución
 
-Desde el directorio principal (`client/`), ejecuta:
+Desde el directorio principal de la rama client (`Battleship-Networking/`), ejecuta:
 
 ```bash
 python -m src.main [ruta_log]
