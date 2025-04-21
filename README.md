@@ -32,6 +32,30 @@ Donde
 
 Estos parámetros son opcionales, si usted no los coloca se pondrán los que están por defecto.
 
+### Estructura de archivos del proyecto
+```jsx
+└── Battleship-Networking
+    ├── build
+    │   └── Makefile
+    ├── client debug
+    ├── docs
+    │   ├── images
+    ├── include
+    │   ├── game_manager.h
+    │   ├── protocol.h
+    │   ├── session_handler.h
+    │   └── utils.h
+    ├── README.md
+    ├── server
+    └── src
+        ├── client.c
+        ├── game_manager.c
+        ├── protocol.c
+        ├── server_main.c
+        ├── session_handler.c
+        └── utils.c
+```
+
 # Documentación
 
 ## Introducción.
@@ -77,12 +101,7 @@ El planteamiento que utilizamos, de manera simplificada, es el siguiente:
 
 De este modo es escalable (porque cada sesión corre su propio hilo y aisla su lógica del juego de las demás), eficiente y modular(ya que separamos la lógica, el servidor y las sesiones, aprovechando el protocolo).
 
-tree general del proyecto
 
-Battleship-Networking
-├───build
-├───include
-└───src
 
 **Diagramas de arquitectura.**
 
