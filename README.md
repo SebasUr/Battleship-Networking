@@ -1,4 +1,5 @@
 # Estructura del proyecto y ejecución
+[Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
 
 El proyecto está dividido en dos ramas principales
 
@@ -56,7 +57,7 @@ Estos parámetros son opcionales, si usted no los coloca se pondrán los que est
         └── utils.c
 ```
 
-# Documentación
+# Documentación y video.
 
 [Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
 
