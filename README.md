@@ -59,6 +59,11 @@ Estos parámetros son opcionales, si usted no los coloca se pondrán los que est
 
 # Documentación y video.
 
+Integrantes:
+- Johan Alexander Alvarez Osorio
+- Santiago Sabogal Lozano
+- Sebastián Andrés Uribe Ruiz
+  
 [Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
 
 ## Introducción.
