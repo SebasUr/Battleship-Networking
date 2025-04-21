@@ -58,6 +58,8 @@ Estos parámetros son opcionales, si usted no los coloca se pondrán los que est
 
 # Documentación
 
+[Video del proyecto](https://youtu.be/Gx6a7H1ZuI0)
+
 ## Introducción.
 
 El presente documento describe el desarrollo de **BattleShip**, el es una implementación en lenguaje C del clásico juego de batalla naval, diseñada como parte de un proyecto para el curso de **Telemática**. A través de este proyecto se busca aplicar y consolidar conocimientos fundamentales sobre **protocolos de comunicación**, **programación de sockets**, **modelos cliente-servidor** y **manejo de hilos (threads)**, utilizando la API de sockets de Berkeley.
